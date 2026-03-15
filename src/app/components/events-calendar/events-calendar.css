@@ -1,4 +1,5 @@
 /* events-calendar.component.css */
+@reference "../../styles.css"; 
 
 /* Make calendar fit dark/sports theme */
 .fc {
