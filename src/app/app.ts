@@ -4,7 +4,7 @@ import { EventsCalendarComponent } from './components/events-calendar/events-cal
 
 @Component({
   selector: 'app-root',
-  imports: [ EventsCalendarComponent],
+  imports: [EventsCalendarComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
