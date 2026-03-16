@@ -2,9 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
-  inject,
   signal
 } from '@angular/core';
 import { EventsCalendarComponent } from './components/events-calendar/events-calendar';
@@ -24,8 +22,6 @@ interface GallerySlide {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App {
-  private readonly destroyRef = inject(DestroyRef);
-
   protected readonly title = signal('ASSBar');
   protected readonly slides: readonly GallerySlide[] = [
     {
@@ -36,9 +32,9 @@ export class App {
     },
     {
       day: 'Tuesday',
-      src: '/gallery/tuesday.jpg',
-      alt: 'Tuesday wing special and big-screen sports viewing',
-      caption: 'Tuesday Wing Night'
+      src: '/gallery/tuesday.png',
+      alt: 'Taco Tuesday and specials at All-Star Sports Bar',
+      caption: 'Taco Tuesday'
     },
     {
       day: 'Wednesday',
@@ -74,16 +70,6 @@ export class App {
 
   protected readonly activeIndex = signal(this.getStartingSlideIndex());
   protected readonly activeSlide = computed(() => this.slides[this.activeIndex()]);
-
-  constructor() {
-    const timer = setInterval(() => {
-      this.nextSlide();
-    }, 6000);
-
-    this.destroyRef.onDestroy(() => {
-      clearInterval(timer);
-    });
-  }
 
   protected nextSlide(): void {
     this.activeIndex.update((index) => (index + 1) % this.slides.length);
