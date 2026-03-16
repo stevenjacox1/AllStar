@@ -37,7 +37,7 @@ export class App {
       src: '/gallery/tuesday.png',
       alt: 'Taco Tuesday and specials at All-Star Sports Bar',
       caption: 'Taco Tuesday',
-      details: 'Build-your-own taco baskets, $3 street tacos, and game audio on during every major matchup all evening long.'
+      details: '2 Chicken or Beef Tacos for $5.'
     },
     {
       day: 'Wednesday',
