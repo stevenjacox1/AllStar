@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 export interface BarEvent {
   id: string;
@@ -8,70 +9,68 @@ export interface BarEvent {
   description: string;
 }
 
-const STORAGE_KEY = 'assbar_events';
-
-const DEFAULT_EVENTS: BarEvent[] = [
-  {
-    id: '1',
-    title: 'UFC Fight Night Watch Party',
-    date: '2026-03-22',
-    time: '7:00 PM',
-    description: 'Watch all the fights live on our big screens. $5 drinks all night!'
-  },
-  {
-    id: '2',
-    title: 'March Madness Bracket Challenge',
-    date: '2026-03-26',
-    time: '12:00 PM',
-    description: 'Sign up for our bracket challenge. Winner gets a $100 bar tab!'
-  },
-  {
-    id: '3',
-    title: 'Sunday Trivia Night',
-    date: '2026-03-29',
-    time: '7:00 PM',
-    description: 'Sports trivia with prizes for first, second, and third place teams.'
-  }
-];
+type EventPayload = Omit<BarEvent, 'id'>;
 
 @Injectable({ providedIn: 'root' })
 export class EventsService {
-  private readonly _events = signal<BarEvent[]>(this.load());
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = '/api/events';
+  private readonly _events = signal<BarEvent[]>([]);
   readonly events = this._events.asReadonly();
 
-  private load(): BarEvent[] {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as BarEvent[]) : DEFAULT_EVENTS;
-    } catch {
-      return DEFAULT_EVENTS;
-    }
+  constructor() {
+    this.refresh();
   }
 
-  private save(events: BarEvent[]): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  refresh(): void {
+    this.http.get<BarEvent[]>(this.apiUrl).subscribe({
+      next: events => {
+        const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
+        this._events.set(sorted);
+      },
+      error: error => {
+        console.error('Failed to load events from API', error);
+      }
+    });
   }
 
-  add(event: Omit<BarEvent, 'id'>): void {
-    const newEvent: BarEvent = { ...event, id: Date.now().toString() };
-    const updated = [...this._events(), newEvent].sort((a, b) =>
-      a.date.localeCompare(b.date)
-    );
-    this._events.set(updated);
-    this.save(updated);
+  add(event: EventPayload): void {
+    this.http.post<BarEvent>(this.apiUrl, event).subscribe({
+      next: created => {
+        const updated = [...this._events(), created].sort((a, b) =>
+          a.date.localeCompare(b.date)
+        );
+        this._events.set(updated);
+      },
+      error: error => {
+        console.error('Failed to create event', error);
+      }
+    });
   }
 
-  update(id: string, changes: Omit<BarEvent, 'id'>): void {
-    const updated = this._events()
-      .map(e => (e.id === id ? { ...e, ...changes } : e))
-      .sort((a, b) => a.date.localeCompare(b.date));
-    this._events.set(updated);
-    this.save(updated);
+  update(id: string, changes: EventPayload): void {
+    this.http.put<BarEvent>(`${this.apiUrl}/${id}`, changes).subscribe({
+      next: saved => {
+        const updated = this._events()
+          .map(e => (e.id === id ? saved : e))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        this._events.set(updated);
+      },
+      error: error => {
+        console.error('Failed to update event', error);
+      }
+    });
   }
 
   remove(id: string): void {
-    const updated = this._events().filter(e => e.id !== id);
-    this._events.set(updated);
-    this.save(updated);
+    this.http.delete<void>(`${this.apiUrl}/${id}`).subscribe({
+      next: () => {
+        const updated = this._events().filter(e => e.id !== id);
+        this._events.set(updated);
+      },
+      error: error => {
+        console.error('Failed to delete event', error);
+      }
+    });
   }
 }

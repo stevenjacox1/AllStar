@@ -1,0 +1,9 @@
+{
+  "name": "assbar-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azure Functions API for ASSBar events",
+  "dependencies": {
+    "@azure/data-tables": "^13.3.1"
+  }
+}
