@@ -12,6 +12,27 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Local API (match Static Web Apps behavior)
+
+This app expects API calls at `/api/*`.
+During local development, Angular now proxies `/api` to Azure Functions at `http://localhost:7071`.
+
+1. Install Azure Functions Core Tools (if not already installed).
+2. In the `api/` folder, create `local.settings.json` from `local.settings.sample.json` and fill in your storage connection string.
+3. Start the Functions host from the `api/` folder:
+
+```bash
+func start
+```
+
+4. In a second terminal at the project root, start the frontend:
+
+```bash
+ng serve
+```
+
+With both processes running, `http://localhost:4200/api/events` should return JSON from the local API (not `index.html`).
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:

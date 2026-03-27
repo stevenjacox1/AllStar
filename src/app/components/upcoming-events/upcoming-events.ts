@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { EventsService } from '../../services/events.service';
 
@@ -11,5 +11,9 @@ import { EventsService } from '../../services/events.service';
 })
 export class UpcomingEventsComponent {
   private readonly eventsService = inject(EventsService);
-  protected readonly events = this.eventsService.events;
+  protected readonly events = computed(() =>
+    this.eventsService
+      .events()
+      .filter(event => !this.eventsService.isOlderThanOneDay(event.date))
+  );
 }

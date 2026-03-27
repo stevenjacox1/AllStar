@@ -73,6 +73,10 @@ export class AdminEventsComponent {
     this.router.navigate(['/admin']);
   }
 
+  protected isOlderThanOneDay(date: string): boolean {
+    return this.eventsService.isOlderThanOneDay(date);
+  }
+
   private resetForm(): void {
     this.formTitle = '';
     this.formDate = '';
