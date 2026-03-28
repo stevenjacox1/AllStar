@@ -7,8 +7,8 @@ import {
   inject,
   signal
 } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { marked } from 'marked';
 import { catchError, map, of, switchMap } from 'rxjs';
 
 interface GallerySlide {
@@ -19,6 +19,10 @@ interface GallerySlide {
   caption: string;
 }
 
+function normalizeHtml(html: string): string {
+  return html.replace(/font-color\s*:/gi, 'color:');
+}
+
 @Component({
   selector: 'app-daily-specials-gallery',
   imports: [NgOptimizedImage],
@@ -27,6 +31,7 @@ interface GallerySlide {
 })
 export class DailySpecialsGalleryComponent {
   private readonly http = inject(HttpClient);
+  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly slides: readonly GallerySlide[] = [
     {
@@ -82,16 +87,19 @@ export class DailySpecialsGalleryComponent {
 
   protected readonly activeIndex = signal(this.getStartingSlideIndex());
   protected readonly activeSlide = computed(() => this.slides[this.activeIndex()]);
-  protected readonly activeDetailsHtml = toSignal(
+  private readonly activeDetailsRawHtml = toSignal(
     toObservable(this.activeSlide).pipe(
       switchMap(slide =>
-        this.http.get<{ markdown: string } | null>(`/api/gallery/${slide.dayKey}`).pipe(
-          map(response => marked.parse(response?.markdown ?? '') as string),
+        this.http.get<{ html: string } | null>(`/api/gallery/${slide.dayKey}`).pipe(
+          map(response => normalizeHtml(response?.html ?? '')),
           catchError(() => of('<p>Special details are unavailable right now.</p>'))
         )
       )
     ),
     { initialValue: '<p>Loading details...</p>' }
+  );
+  protected readonly activeDetailsHtml = computed<SafeHtml>(() =>
+    this.sanitizer.bypassSecurityTrustHtml(this.activeDetailsRawHtml())
   );
 
   protected nextSlide(): void {

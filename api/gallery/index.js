@@ -30,6 +30,10 @@ function isValidDay(day) {
   return DAYS.includes(day.toLowerCase());
 }
 
+function normalizeHtml(html) {
+  return html.replace(/font-color\s*:/gi, 'color:');
+}
+
 module.exports = async function (context, req) {
   try {
     const client = getClient();
@@ -47,7 +51,7 @@ module.exports = async function (context, req) {
       })) {
         items.push({
           day: entity.rowKey,
-          markdown: entity.markdown || ''
+          html: normalizeHtml(entity.html || entity.markdown || '')
         });
       }
       context.res = {
@@ -75,7 +79,7 @@ module.exports = async function (context, req) {
           headers: { 'Content-Type': 'application/json' },
           body: {
             day: entity.rowKey,
-            markdown: entity.markdown || ''
+            html: normalizeHtml(entity.html || entity.markdown || '')
           }
         };
         return;
@@ -115,19 +119,24 @@ module.exports = async function (context, req) {
         };
         return;
       }
-      if (!payload.markdown || typeof payload.markdown !== 'string') {
+      const html = typeof payload.html === 'string'
+        ? payload.html
+        : (typeof payload.markdown === 'string' ? payload.markdown : null);
+
+      if (html == null || !html.trim()) {
         context.res = {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-          body: { error: 'markdown field is required and must be a string' }
+          body: { error: 'html field is required and must be a non-empty string' }
         };
         return;
       }
       try {
+        const normalizedHtml = normalizeHtml(html);
         const entity = {
           partitionKey: PARTITION_KEY,
           rowKey: day.toLowerCase(),
-          markdown: payload.markdown
+          html: normalizedHtml
         };
         await client.upsertEntity(entity);
         context.res = {
@@ -135,7 +144,7 @@ module.exports = async function (context, req) {
           headers: { 'Content-Type': 'application/json' },
           body: {
             day: entity.rowKey,
-            markdown: entity.markdown
+            html: entity.html
           }
         };
         return;

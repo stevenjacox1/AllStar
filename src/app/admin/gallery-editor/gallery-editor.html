@@ -40,56 +40,56 @@
   } @else {
     <!-- Editor Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Markdown Editor -->
+      <!-- HTML Editor -->
       <div>
-        <h3 class="text-xl font-semibold text-white mb-3">Markdown Editor</h3>
+        <h3 class="text-xl font-semibold text-white mb-3">HTML Editor</h3>
 
         <!-- Toolbar -->
         <div class="mb-3 flex flex-wrap gap-2 bg-gray-800 p-3 rounded border border-gray-700">
           <button
-            (click)="bold()"
-            title="Bold (Ctrl+B)"
+            (click)="wrapStrong()"
+            title="Insert <strong> tag"
             class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-semibold"
           >
-            <strong>B</strong>
+            &lt;strong&gt;
           </button>
           <button
-            (click)="italic()"
-            title="Italic (Ctrl+I)"
-            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-italic"
+            (click)="wrapEmphasis()"
+            title="Insert <em> tag"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
           >
-            <em>I</em>
+            &lt;em&gt;
           </button>
           <div class="border-r border-gray-600"></div>
           <button
             (click)="addHeading()"
-            title="Add Heading"
+            title="Insert <h2> tag"
             class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-semibold"
           >
-            H2
+            &lt;h2&gt;
           </button>
           <button
-            (click)="addBulletList()"
-            title="Add Bullet List"
+            (click)="addParagraph()"
+            title="Insert <p> tag"
             class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
           >
-            •
+            &lt;p&gt;
           </button>
           <button
             (click)="addLink()"
-            title="Add Link"
+            title="Insert <a> tag"
             class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
           >
-            🔗
+            &lt;a&gt;
           </button>
         </div>
 
         <!-- Editor Textarea -->
         <textarea
-          [ngModel]="markdown()"
-          (ngModelChange)="markdown.set($event)"
+          [ngModel]="html()"
+          (ngModelChange)="html.set($event)"
           class="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded text-white font-mono text-sm resize-none focus:outline-none focus:border-red-600"
-          placeholder="Enter markdown content here..."
+          placeholder="Enter HTML content here..."
         ></textarea>
 
         <!-- Action Buttons -->
@@ -103,7 +103,7 @@
           </button>
           <button
             (click)="clearContent()"
-            [disabled]="isSaving() || !markdown()"
+            [disabled]="isSaving() || !html()"
             class="px-6 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white font-semibold rounded transition"
           >
             Clear

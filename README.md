@@ -48,7 +48,7 @@ To migrate existing markdown files to table storage:
 powershell -ExecutionPolicy Bypass -File migrate-gallery.ps1
 ```
 
-This script uploads the content from `public/gallery-details/*.md` to the gallery table in Azure Storage.
+This script converts content from `public/gallery-details/*.md` to HTML and uploads it to the gallery table in Azure Storage.
 
 #### Using the Editor
 
@@ -56,8 +56,8 @@ Once migrated, you can:
 1. Open `http://localhost:4200/admin/events`
 2. Click the "Gallery Content" tab
 3. Select a day (Monday-Sunday)
-4. Edit the markdown content
-5. Use the toolbar buttons for quick formatting (bold, italic, heading, etc.)
+4. Edit the HTML content
+5. Use the toolbar buttons for quick tag insertion (`<strong>`, `<em>`, `<h2>`, etc.)
 6. See live preview on the right
 7. Click "Save Content" to persist changes
 

@@ -2,11 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { marked } from 'marked';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface GalleryItem {
   day: string;
-  markdown: string;
+  html: string;
+}
+
+function normalizeHtml(html: string): string {
+  return html.replace(/font-color\s*:/gi, 'color:');
 }
 
 @Component({
@@ -18,22 +22,19 @@ interface GalleryItem {
 })
 export class GalleryEditorComponent {
   private readonly http = inject(HttpClient);
+  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   protected readonly selectedDay = signal<string>('monday');
-  protected readonly markdown = signal<string>('');
+  protected readonly html = signal<string>('');
   protected readonly loading = signal<boolean>(false);
   protected readonly isSaving = signal<boolean>(false);
   protected readonly error = signal<string>('');
   protected readonly saveSuccess = signal<boolean>(false);
 
-  protected readonly htmlPreview = computed(() => {
-    try {
-      return marked.parse(this.markdown()) as string;
-    } catch {
-      return '<p>Error rendering preview</p>';
-    }
-  });
+  protected readonly htmlPreview = computed<SafeHtml>(() =>
+    this.sanitizer.bypassSecurityTrustHtml(normalizeHtml(this.html()))
+  );
 
   constructor() {
     // Load gallery content when selected day changes
@@ -51,16 +52,16 @@ export class GalleryEditorComponent {
       .get<GalleryItem | null>(`/api/gallery/${day}`)
       .subscribe({
         next: (item) => {
-          this.markdown.set(item?.markdown ?? '');
+          this.html.set(item?.html ?? '');
           this.loading.set(false);
         },
         error: (err) => {
           if (err.status === 404 || err.status === 204) {
-            this.markdown.set('');
+            this.html.set('');
             this.error.set('');
           } else {
             console.error('Error loading gallery content:', err);
-            this.markdown.set('');
+            this.html.set('');
             this.error.set('Failed to load gallery content');
           }
           this.loading.set(false);
@@ -74,10 +75,10 @@ export class GalleryEditorComponent {
 
   saveContent(): void {
     const day = this.selectedDay();
-    const content = this.markdown();
+    const content = normalizeHtml(this.html());
 
     if (!content.trim()) {
-      this.error.set('Markdown content cannot be empty');
+      this.error.set('HTML content cannot be empty');
       return;
     }
 
@@ -86,9 +87,10 @@ export class GalleryEditorComponent {
     this.saveSuccess.set(false);
 
     this.http
-      .put<GalleryItem>(`/api/gallery/${day}`, { markdown: content })
+      .put<GalleryItem>(`/api/gallery/${day}`, { html: content })
       .subscribe({
         next: () => {
+          this.html.set(content);
           this.isSaving.set(false);
           this.saveSuccess.set(true);
           setTimeout(() => this.saveSuccess.set(false), 3000);
@@ -101,13 +103,13 @@ export class GalleryEditorComponent {
       });
   }
 
-  insertMarkdown(before: string, after: string = ''): void {
+  insertHtml(before: string, after: string = ''): void {
     const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const text = this.markdown();
+    const text = this.html();
     const selectedText = text.substring(start, end);
 
     const newText =
@@ -117,7 +119,7 @@ export class GalleryEditorComponent {
       after +
       text.substring(end);
 
-    this.markdown.set(newText);
+    this.html.set(newText);
 
     // Reset cursor position after timeout to allow DOM to update
     setTimeout(() => {
@@ -126,29 +128,29 @@ export class GalleryEditorComponent {
     }, 0);
   }
 
-  bold(): void {
-    this.insertMarkdown('**', '**');
+  wrapStrong(): void {
+    this.insertHtml('<strong>', '</strong>');
   }
 
-  italic(): void {
-    this.insertMarkdown('_', '_');
+  wrapEmphasis(): void {
+    this.insertHtml('<em>', '</em>');
   }
 
   addHeading(): void {
-    this.insertMarkdown('## ');
+    this.insertHtml('<h2>', '</h2>');
   }
 
-  addBulletList(): void {
-    this.insertMarkdown('- ');
+  addParagraph(): void {
+    this.insertHtml('<p>', '</p>');
   }
 
   addLink(): void {
-    this.insertMarkdown('[text](', ')');
+    this.insertHtml('<a href="https://">', '</a>');
   }
 
   clearContent(): void {
     if (confirm('Are you sure you want to clear all content for this day?')) {
-      this.markdown.set('');
+      this.html.set('');
     }
   }
 }
