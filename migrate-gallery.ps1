@@ -21,6 +21,15 @@ $success = 0
 $failed = 0
 $galleryDetailsDir = Join-Path $PSScriptRoot "public/gallery-details"
 $days = @('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+$captions = @{
+    monday = 'Miller Monday'
+    tuesday = 'Taco Tuesday'
+    wednesday = 'Hornitos Humpday'
+    thursday = 'Crown Royal Thursday'
+    friday = 'Fireball Friday'
+    saturday = 'Svedka Saturday'
+    sunday = 'Sunday All-Day Action'
+}
 
 foreach ($day in $days) {
     $markdownPath = Join-Path $galleryDetailsDir "$day.md"
@@ -43,7 +52,8 @@ foreach ($day in $days) {
         continue
     }
 
-    $body = @{ html = $html } | ConvertTo-Json -Depth 4
+    $caption = $captions[$day]
+    $body = @{ html = $html; caption = $caption } | ConvertTo-Json -Depth 4
     
     try {
         Invoke-WebRequest -Uri "$ApiBase/gallery/$day" `

@@ -3,6 +3,15 @@ const { TableClient } = require('@azure/data-tables');
 const TABLE_NAME = 'gallery';
 const PARTITION_KEY = 'gallery';
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DEFAULT_CAPTIONS = {
+  monday: 'Miller Monday',
+  tuesday: 'Taco Tuesday',
+  wednesday: 'Hornitos Humpday',
+  thursday: 'Crown Royal Thursday',
+  friday: 'Fireball Friday',
+  saturday: 'Svedka Saturday',
+  sunday: 'Sunday All-Day Action'
+};
 
 function getClient() {
   const connectionString = process.env.AZURE_TABLE_STORAGE_CONNECTION_STRING;
@@ -34,6 +43,10 @@ function normalizeHtml(html) {
   return html.replace(/font-color\s*:/gi, 'color:');
 }
 
+function getDefaultCaption(dayKey) {
+  return DEFAULT_CAPTIONS[dayKey] || '';
+}
+
 module.exports = async function (context, req) {
   try {
     const client = getClient();
@@ -51,7 +64,8 @@ module.exports = async function (context, req) {
       })) {
         items.push({
           day: entity.rowKey,
-          html: normalizeHtml(entity.html || entity.markdown || '')
+          html: normalizeHtml(entity.html || entity.markdown || ''),
+          caption: entity.caption || getDefaultCaption(entity.rowKey)
         });
       }
       context.res = {
@@ -79,7 +93,8 @@ module.exports = async function (context, req) {
           headers: { 'Content-Type': 'application/json' },
           body: {
             day: entity.rowKey,
-            html: normalizeHtml(entity.html || entity.markdown || '')
+            html: normalizeHtml(entity.html || entity.markdown || ''),
+            caption: entity.caption || getDefaultCaption(entity.rowKey)
           }
         };
         return;
@@ -122,6 +137,9 @@ module.exports = async function (context, req) {
       const html = typeof payload.html === 'string'
         ? payload.html
         : (typeof payload.markdown === 'string' ? payload.markdown : null);
+      const caption = typeof payload.caption === 'string'
+        ? payload.caption.trim()
+        : getDefaultCaption(day.toLowerCase());
 
       if (html == null || !html.trim()) {
         context.res = {
@@ -136,7 +154,8 @@ module.exports = async function (context, req) {
         const entity = {
           partitionKey: PARTITION_KEY,
           rowKey: day.toLowerCase(),
-          html: normalizedHtml
+          html: normalizedHtml,
+          caption
         };
         await client.upsertEntity(entity);
         context.res = {
@@ -144,7 +163,8 @@ module.exports = async function (context, req) {
           headers: { 'Content-Type': 'application/json' },
           body: {
             day: entity.rowKey,
-            html: entity.html
+            html: entity.html,
+            caption: entity.caption
           }
         };
         return;

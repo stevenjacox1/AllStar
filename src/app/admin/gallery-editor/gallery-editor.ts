@@ -7,6 +7,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 interface GalleryItem {
   day: string;
   html: string;
+  caption: string;
 }
 
 function normalizeHtml(html: string): string {
@@ -27,6 +28,7 @@ export class GalleryEditorComponent {
   protected readonly days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   protected readonly selectedDay = signal<string>('monday');
   protected readonly html = signal<string>('');
+  protected readonly caption = signal<string>('');
   protected readonly loading = signal<boolean>(false);
   protected readonly isSaving = signal<boolean>(false);
   protected readonly error = signal<string>('');
@@ -53,15 +55,18 @@ export class GalleryEditorComponent {
       .subscribe({
         next: (item) => {
           this.html.set(item?.html ?? '');
+          this.caption.set(item?.caption ?? '');
           this.loading.set(false);
         },
         error: (err) => {
           if (err.status === 404 || err.status === 204) {
             this.html.set('');
+            this.caption.set('');
             this.error.set('');
           } else {
             console.error('Error loading gallery content:', err);
             this.html.set('');
+            this.caption.set('');
             this.error.set('Failed to load gallery content');
           }
           this.loading.set(false);
@@ -76,9 +81,15 @@ export class GalleryEditorComponent {
   saveContent(): void {
     const day = this.selectedDay();
     const content = normalizeHtml(this.html());
+    const caption = this.caption().trim();
 
     if (!content.trim()) {
       this.error.set('HTML content cannot be empty');
+      return;
+    }
+
+    if (!caption) {
+      this.error.set('Caption cannot be empty');
       return;
     }
 
@@ -87,10 +98,11 @@ export class GalleryEditorComponent {
     this.saveSuccess.set(false);
 
     this.http
-      .put<GalleryItem>(`/api/gallery/${day}`, { html: content })
+      .put<GalleryItem>(`/api/gallery/${day}`, { html: content, caption })
       .subscribe({
         next: () => {
           this.html.set(content);
+          this.caption.set(caption);
           this.isSaving.set(false);
           this.saveSuccess.set(true);
           setTimeout(() => this.saveSuccess.set(false), 3000);

@@ -16,6 +16,11 @@ interface GallerySlide {
   dayKey: string;
   src: string;
   alt: string;
+  defaultCaption: string;
+}
+
+interface GalleryContent {
+  html: string;
   caption: string;
 }
 
@@ -39,67 +44,73 @@ export class DailySpecialsGalleryComponent {
       dayKey: 'monday',
       src: '/gallery/monday.jpg',
       alt: 'Monday crowd enjoying game night at All-Star Sports Bar',
-      caption: 'Miller Monday'
+      defaultCaption: 'Miller Monday'
     },
     {
       day: 'Tuesday',
       dayKey: 'tuesday',
       src: '/gallery/tuesday.png',
       alt: 'Taco Tuesday',
-      caption: 'Taco Tuesday'
+      defaultCaption: 'Taco Tuesday'
     },
     {
       day: 'Wednesday',
       dayKey: 'wednesday',
       src: '/gallery/wednesday.jpg',
       alt: 'Hornitos Humpday',
-      caption: 'Hornitos Humpday'
+      defaultCaption: 'Hornitos Humpday'
     },
     {
       day: 'Thursday',
       dayKey: 'thursday',
       src: '/gallery/thursday.jpg',
       alt: 'Crown Royal Thursday',
-      caption: 'Crown Royal Thursday'
+      defaultCaption: 'Crown Royal Thursday'
     },
     {
       day: 'Friday',
       dayKey: 'friday',
       src: '/gallery/friday.jpg',
       alt: 'Friday night lights watch party at All-Star',
-      caption: 'Fireball Friday'
+      defaultCaption: 'Fireball Friday'
     },
     {
       day: 'Saturday',
       dayKey: 'saturday',
       src: '/gallery/saturday.jpg',
       alt: 'Svedka Saturday',
-      caption: 'Svedka Saturday'
+      defaultCaption: 'Svedka Saturday'
     },
     {
       day: 'Sunday',
       dayKey: 'sunday',
       src: '/gallery/sunday.jpg',
       alt: 'Sunday full house for all-day game coverage',
-      caption: 'Sunday All-Day Action'
+      defaultCaption: 'Sunday All-Day Action'
     }
   ];
 
   protected readonly activeIndex = signal(this.getStartingSlideIndex());
   protected readonly activeSlide = computed(() => this.slides[this.activeIndex()]);
-  private readonly activeDetailsRawHtml = toSignal(
+  private readonly activeContent = toSignal(
     toObservable(this.activeSlide).pipe(
       switchMap(slide =>
-        this.http.get<{ html: string } | null>(`/api/gallery/${slide.dayKey}`).pipe(
-          map(response => normalizeHtml(response?.html ?? '')),
-          catchError(() => of('<p>Special details are unavailable right now.</p>'))
+        this.http.get<{ html: string; caption: string } | null>(`/api/gallery/${slide.dayKey}`).pipe(
+          map(response => ({
+            html: normalizeHtml(response?.html ?? ''),
+            caption: response?.caption?.trim() ?? ''
+          })),
+          catchError(() => of({ html: '<p>Special details are unavailable right now.</p>', caption: '' }))
         )
       )
     ),
-    { initialValue: '<p>Loading details...</p>' }
+    { initialValue: { html: '<p>Loading details...</p>', caption: '' } }
+  );
+  protected readonly activeCaption = computed(() =>
+    (this.activeContent()?.caption || '').trim() || this.activeSlide().defaultCaption
   );
   protected readonly activeDetailsHtml = computed<SafeHtml>(() =>
-    this.sanitizer.bypassSecurityTrustHtml(this.activeDetailsRawHtml())
+    this.sanitizer.bypassSecurityTrustHtml(this.activeContent()?.html ?? '<p>Loading details...</p>')
   );
 
   protected nextSlide(): void {
