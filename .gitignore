@@ -8,6 +8,7 @@
 
 # Node
 /node_modules
+api/node_modules/
 npm-debug.log
 yarn-error.log
 
@@ -38,6 +39,7 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
+api/local.settings.json
 
 # System files
 .DS_Store
