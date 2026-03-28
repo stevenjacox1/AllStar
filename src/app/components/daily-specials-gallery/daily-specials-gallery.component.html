@@ -1,0 +1,68 @@
+<div class="mx-auto max-w-6xl">
+  <h3 class="text-4xl md:text-5xl font-bold mb-3 text-yellow-400 text-center">Daily Specials</h3>
+
+  <div class="relative overflow-hidden rounded-2xl border border-gray-700 shadow-2xl bg-black/60">
+    <img
+      [ngSrc]="activeSlide().src"
+      [alt]="activeSlide().alt"
+      width="1600"
+      height="900"
+      class="block w-full h-auto max-h-[52vh] md:max-h-[68vh] object-contain"
+      priority
+    />
+
+    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+
+    <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8 flex items-end justify-between gap-4">
+      <div>
+        <p class="text-red-400 font-semibold uppercase tracking-widest text-sm">{{ activeSlide().day }}</p>
+        <p class="text-white text-2xl md:text-4xl font-black">{{ activeSlide().caption }}</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="previousSlide()"
+          class="h-11 w-11 rounded-full bg-gray-900/80 text-white border border-gray-500 hover:bg-red-700 transition-colors"
+          aria-label="Previous gallery image"
+        >
+          ‹
+        </button>
+
+        <button
+          type="button"
+          (click)="nextSlide()"
+          class="h-11 w-11 rounded-full bg-gray-900/80 text-white border border-gray-500 hover:bg-red-700 transition-colors"
+          aria-label="Next gallery image"
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-wrap items-center justify-center gap-2" aria-label="Select gallery day">
+    @for (slide of slides; track slide.day; let i = $index) {
+      <button
+        type="button"
+        (click)="jumpToSlide(i)"
+        [class]="i === activeIndex()
+          ? 'px-3 py-2 rounded-md bg-red-700 text-white text-sm font-semibold'
+          : 'px-3 py-2 rounded-md bg-gray-800 text-gray-200 text-sm font-medium hover:bg-gray-700'"
+        [attr.aria-current]="i === activeIndex() ? 'true' : null"
+        [attr.aria-label]="'Show ' + slide.day + ' photo'"
+      >
+        {{ slide.day }}
+      </button>
+    }
+  </div>
+
+  <section class="mt-8 rounded-xl border border-gray-700 bg-gray-950/80 p-6 md:p-8">
+    <p class="text-xs uppercase tracking-[0.25em] text-red-400 font-semibold">{{ activeSlide().day }}</p>
+    <h4 class="mt-2 text-2xl md:text-3xl font-black text-white">{{ activeSlide().day }}: {{ activeSlide().caption }}</h4>
+    <div
+      class="mt-4 text-gray-200 text-base md:text-lg leading-relaxed [&_p]:mb-3 [&_strong]:text-white [&_ul]:list-disc [&_ul]:pl-6"
+      [innerHTML]="activeDetailsHtml()"
+    ></div>
+  </section>
+</div>
