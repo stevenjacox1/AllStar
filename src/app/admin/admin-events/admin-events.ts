@@ -1,14 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { EventsService, BarEvent } from '../../services/events.service';
 
 @Component({
   selector: 'app-admin-events',
-  standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './admin-events.html',
   styleUrl: './admin-events.css'
 })

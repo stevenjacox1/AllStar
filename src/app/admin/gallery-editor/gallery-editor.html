@@ -1,0 +1,124 @@
+<div class="gallery-editor px-6 py-8">
+  <h2 class="text-3xl font-bold text-white mb-6">Gallery Content Editor</h2>
+
+  <!-- Day Selector Tabs -->
+  <div class="mb-6">
+    <p class="text-gray-300 text-sm mb-3">Select Day:</p>
+    <div class="flex flex-wrap gap-2">
+      @for (day of days; track day) {
+        <button
+          (click)="selectDay(day)"
+          [class.bg-red-600]="selectedDay() === day"
+          [class.bg-gray-700]="selectedDay() !== day"
+          class="px-4 py-2 rounded text-white capitalize font-semibold transition hover:bg-red-700"
+        >
+          {{ day }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="mb-4 p-4 bg-red-900 border border-red-700 text-red-100 rounded">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Success Alert -->
+  @if (saveSuccess()) {
+    <div class="mb-4 p-4 bg-green-900 border border-green-700 text-green-100 rounded">
+      Content saved successfully!
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="text-center py-8">
+      <p class="text-gray-400">Loading content...</p>
+    </div>
+  } @else {
+    <!-- Editor Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Markdown Editor -->
+      <div>
+        <h3 class="text-xl font-semibold text-white mb-3">Markdown Editor</h3>
+
+        <!-- Toolbar -->
+        <div class="mb-3 flex flex-wrap gap-2 bg-gray-800 p-3 rounded border border-gray-700">
+          <button
+            (click)="bold()"
+            title="Bold (Ctrl+B)"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-semibold"
+          >
+            <strong>B</strong>
+          </button>
+          <button
+            (click)="italic()"
+            title="Italic (Ctrl+I)"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-italic"
+          >
+            <em>I</em>
+          </button>
+          <div class="border-r border-gray-600"></div>
+          <button
+            (click)="addHeading()"
+            title="Add Heading"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm font-semibold"
+          >
+            H2
+          </button>
+          <button
+            (click)="addBulletList()"
+            title="Add Bullet List"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
+          >
+            •
+          </button>
+          <button
+            (click)="addLink()"
+            title="Add Link"
+            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
+          >
+            🔗
+          </button>
+        </div>
+
+        <!-- Editor Textarea -->
+        <textarea
+          [ngModel]="markdown()"
+          (ngModelChange)="markdown.set($event)"
+          class="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded text-white font-mono text-sm resize-none focus:outline-none focus:border-red-600"
+          placeholder="Enter markdown content here..."
+        ></textarea>
+
+        <!-- Action Buttons -->
+        <div class="mt-4 flex gap-3">
+          <button
+            (click)="saveContent()"
+            [disabled]="isSaving()"
+            class="px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded transition"
+          >
+            {{ isSaving() ? 'Saving...' : 'Save Content' }}
+          </button>
+          <button
+            (click)="clearContent()"
+            [disabled]="isSaving() || !markdown()"
+            class="px-6 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white font-semibold rounded transition"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Preview -->
+      <div>
+        <h3 class="text-xl font-semibold text-white mb-3">Live Preview</h3>
+        <div
+          class="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded text-gray-100 overflow-y-auto [&_p]:mb-3 [&_p]:leading-relaxed [&_strong]:text-white [&_strong]:font-bold [&_em]:text-gray-300 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-red-400 [&_ul]:ml-4 [&_li]:mb-2 [&_a]:text-blue-400 [&_a]:underline [&_a]:hover:text-blue-300"
+          [innerHTML]="htmlPreview()"
+        ></div>
+      </div>
+    </div>
+  }
+</div>

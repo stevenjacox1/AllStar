@@ -1,0 +1,14 @@
+.gallery-editor {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  resize: none;
+}
+
+textarea:focus {
+  border-color: inherit;
+}

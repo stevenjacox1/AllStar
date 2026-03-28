@@ -33,6 +33,36 @@ ng serve
 
 With both processes running, `http://localhost:4200/api/events` should return JSON from the local API (not `index.html`).
 
+### Gallery Content Editor
+
+The admin panel includes a **Gallery Content Editor** tab where you can manage daily special descriptions stored in Azure Table Storage.
+
+#### Initial Migration
+
+To migrate existing markdown files to table storage:
+
+1. Ensure the Functions host is running (`func start` in the `api/` folder)
+2. Run the migration script from the project root:
+
+```bash
+powershell -ExecutionPolicy Bypass -File migrate-gallery.ps1
+```
+
+This script uploads the content from `public/gallery-details/*.md` to the gallery table in Azure Storage.
+
+#### Using the Editor
+
+Once migrated, you can:
+1. Open `http://localhost:4200/admin/events`
+2. Click the "Gallery Content" tab
+3. Select a day (Monday-Sunday)
+4. Edit the markdown content
+5. Use the toolbar buttons for quick formatting (bold, italic, heading, etc.)
+6. See live preview on the right
+7. Click "Save Content" to persist changes
+
+The gallery on the home page automatically fetches the latest content from table storage via the `/api/gallery/{day}` endpoint.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:

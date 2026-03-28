@@ -13,10 +13,10 @@ import { catchError, map, of, switchMap } from 'rxjs';
 
 interface GallerySlide {
   day: string;
+  dayKey: string;
   src: string;
   alt: string;
   caption: string;
-  detailsPath: string;
 }
 
 @Component({
@@ -31,52 +31,52 @@ export class DailySpecialsGalleryComponent {
   protected readonly slides: readonly GallerySlide[] = [
     {
       day: 'Monday',
+      dayKey: 'monday',
       src: '/gallery/monday.jpg',
       alt: 'Monday crowd enjoying game night at All-Star Sports Bar',
-      caption: 'Miller Monday',
-      detailsPath: '/gallery-details/monday.md'
+      caption: 'Miller Monday'
     },
     {
       day: 'Tuesday',
+      dayKey: 'tuesday',
       src: '/gallery/tuesday.png',
       alt: 'Taco Tuesday',
-      caption: 'Taco Tuesday',
-      detailsPath: '/gallery-details/tuesday.md'
+      caption: 'Taco Tuesday'
     },
     {
       day: 'Wednesday',
+      dayKey: 'wednesday',
       src: '/gallery/wednesday.jpg',
       alt: 'Hornitos Humpday',
-      caption: 'Hornitos Humpday',
-      detailsPath: '/gallery-details/wednesday.md'
+      caption: 'Hornitos Humpday'
     },
     {
       day: 'Thursday',
+      dayKey: 'thursday',
       src: '/gallery/thursday.jpg',
       alt: 'Crown Royal Thursday',
-      caption: 'Crown Royal Thursday',
-      detailsPath: '/gallery-details/thursday.md'
+      caption: 'Crown Royal Thursday'
     },
     {
       day: 'Friday',
+      dayKey: 'friday',
       src: '/gallery/friday.jpg',
       alt: 'Friday night lights watch party at All-Star',
-      caption: 'Fireball Friday',
-      detailsPath: '/gallery-details/friday.md'
+      caption: 'Fireball Friday'
     },
     {
       day: 'Saturday',
+      dayKey: 'saturday',
       src: '/gallery/saturday.jpg',
       alt: 'Svedka Saturday',
-      caption: 'Svedka Saturday',
-      detailsPath: '/gallery-details/saturday.md'
+      caption: 'Svedka Saturday'
     },
     {
       day: 'Sunday',
+      dayKey: 'sunday',
       src: '/gallery/sunday.jpg',
       alt: 'Sunday full house for all-day game coverage',
-      caption: 'Sunday All-Day Action',
-      detailsPath: '/gallery-details/sunday.md'
+      caption: 'Sunday All-Day Action'
     }
   ];
 
@@ -85,8 +85,8 @@ export class DailySpecialsGalleryComponent {
   protected readonly activeDetailsHtml = toSignal(
     toObservable(this.activeSlide).pipe(
       switchMap(slide =>
-        this.http.get(slide.detailsPath, { responseType: 'text' }).pipe(
-          map(markdown => marked.parse(markdown) as string),
+        this.http.get<{ markdown: string } | null>(`/api/gallery/${slide.dayKey}`).pipe(
+          map(response => marked.parse(response?.markdown ?? '') as string),
           catchError(() => of('<p>Special details are unavailable right now.</p>'))
         )
       )
