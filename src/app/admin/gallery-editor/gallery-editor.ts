@@ -5,7 +5,10 @@ import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface GalleryItem {
-  day: string;
+  key: string;
+  day: string | null;
+  isDaySection: boolean;
+  sortOrder: number;
   html: string;
   caption: string;
 }
@@ -26,32 +29,71 @@ export class GalleryEditorComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  protected readonly selectedDay = signal<string>('monday');
+  protected readonly selectedKey = signal<string>('monday');
+  protected readonly allItems = signal<GalleryItem[]>([]);
   protected readonly html = signal<string>('');
   protected readonly caption = signal<string>('');
+  protected readonly newSectionTitle = signal<string>('');
   protected readonly loading = signal<boolean>(false);
   protected readonly isSaving = signal<boolean>(false);
   protected readonly error = signal<string>('');
   protected readonly saveSuccess = signal<boolean>(false);
+
+  protected readonly extraSections = computed(() =>
+    this.allItems()
+      .filter(item => !item.isDaySection)
+      .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
+  );
+
+  protected readonly selectedSectionLabel = computed(() => {
+    const key = this.selectedKey();
+    if (this.isDayKey(key)) {
+      return key;
+    }
+    const match = this.extraSections().find(section => section.key === key);
+    return match?.caption || key;
+  });
 
   protected readonly htmlPreview = computed<SafeHtml>(() =>
     this.sanitizer.bypassSecurityTrustHtml(normalizeHtml(this.html()))
   );
 
   constructor() {
-    // Load gallery content when selected day changes
+    this.refreshAllContent();
+
+    // Load selected section content when selection changes.
     effect(() => {
-      const day = this.selectedDay();
-      this.loadGalleryContent(day);
+      this.allItems();
+      const key = this.selectedKey();
+      this.loadGalleryContent(key);
     });
   }
 
-  private loadGalleryContent(day: string): void {
+  private refreshAllContent(): void {
+    this.http.get<GalleryItem[]>('/api/gallery').subscribe({
+      next: items => {
+        this.allItems.set(items ?? []);
+      },
+      error: (err) => {
+        console.error('Error loading gallery list:', err);
+      }
+    });
+  }
+
+  private loadGalleryContent(key: string): void {
     this.loading.set(true);
     this.error.set('');
 
+    if (!this.isDayKey(key)) {
+      const existingSection = this.extraSections().find(section => section.key === key);
+      this.html.set(existingSection?.html ?? '');
+      this.caption.set(existingSection?.caption ?? '');
+      this.loading.set(false);
+      return;
+    }
+
     this.http
-      .get<GalleryItem | null>(`/api/gallery/${day}`)
+      .get<GalleryItem | null>(`/api/gallery/${key}`)
       .subscribe({
         next: (item) => {
           this.html.set(item?.html ?? '');
@@ -74,12 +116,74 @@ export class GalleryEditorComponent {
       });
   }
 
-  selectDay(day: string): void {
-    this.selectedDay.set(day);
+  private isDayKey(key: string): boolean {
+    return this.days.includes(key);
+  }
+
+  private toSectionSlug(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  selectKey(key: string): void {
+    this.selectedKey.set(key);
+    this.error.set('');
+    this.saveSuccess.set(false);
+  }
+
+  createSection(): void {
+    const title = this.newSectionTitle().trim();
+    if (!title) {
+      this.error.set('Section title is required');
+      return;
+    }
+
+    const slug = this.toSectionSlug(title);
+    if (!slug) {
+      this.error.set('Section title must include letters or numbers');
+      return;
+    }
+
+    const key = `extra:${slug}`;
+    const alreadyExists = this.extraSections().some(section => section.key === key);
+    if (alreadyExists) {
+      this.error.set('A section with that title already exists');
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.error.set('');
+
+    this.http
+      .post<GalleryItem>('/api/gallery', {
+        key,
+        caption: title,
+        html: '<p>Enter section details here...</p>'
+      })
+      .subscribe({
+        next: () => {
+          this.newSectionTitle.set('');
+          this.refreshAllContent();
+          this.selectKey(key);
+          this.isSaving.set(false);
+          this.saveSuccess.set(true);
+          setTimeout(() => this.saveSuccess.set(false), 3000);
+        },
+        error: (err) => {
+          console.error('Error creating custom section:', err);
+          this.isSaving.set(false);
+          this.error.set('Failed to create section');
+        }
+      });
   }
 
   saveContent(): void {
-    const day = this.selectedDay();
+    const key = this.selectedKey();
     const content = normalizeHtml(this.html());
     const caption = this.caption().trim();
 
@@ -97,13 +201,41 @@ export class GalleryEditorComponent {
     this.error.set('');
     this.saveSuccess.set(false);
 
+    if (!this.isDayKey(key)) {
+      const existingSection = this.extraSections().find(section => section.key === key);
+      this.http
+        .post<GalleryItem>('/api/gallery', {
+          key,
+          html: content,
+          caption,
+          sortOrder: existingSection?.sortOrder
+        })
+        .subscribe({
+          next: () => {
+            this.html.set(content);
+            this.caption.set(caption);
+            this.isSaving.set(false);
+            this.refreshAllContent();
+            this.saveSuccess.set(true);
+            setTimeout(() => this.saveSuccess.set(false), 3000);
+          },
+          error: (err) => {
+            console.error('Error saving gallery section:', err);
+            this.isSaving.set(false);
+            this.error.set('Failed to save gallery section');
+          }
+        });
+      return;
+    }
+
     this.http
-      .put<GalleryItem>(`/api/gallery/${day}`, { html: content, caption })
+      .put<GalleryItem>(`/api/gallery/${key}`, { html: content, caption })
       .subscribe({
         next: () => {
           this.html.set(content);
           this.caption.set(caption);
           this.isSaving.set(false);
+          this.refreshAllContent();
           this.saveSuccess.set(true);
           setTimeout(() => this.saveSuccess.set(false), 3000);
         },
@@ -161,7 +293,8 @@ export class GalleryEditorComponent {
   }
 
   clearContent(): void {
-    if (confirm('Are you sure you want to clear all content for this day?')) {
+    const selectedLabel = this.selectedSectionLabel();
+    if (confirm(`Are you sure you want to clear all content for ${selectedLabel}?`)) {
       this.html.set('');
     }
   }

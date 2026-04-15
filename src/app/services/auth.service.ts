@@ -1,9 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 
 const AUTH_KEY = 'assbar_admin_auth';
-// Change these credentials as needed
+// Development-only client-side gate; move auth server-side for real security.
 const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'allstar2026';
+const ADMIN_PASSWORD = 'admin';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

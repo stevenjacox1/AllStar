@@ -8,8 +8,8 @@ import {
   signal
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, map, of } from 'rxjs';
 
 interface GallerySlide {
   day: string;
@@ -20,8 +20,27 @@ interface GallerySlide {
 }
 
 interface GalleryContent {
+  key: string;
+  day: string | null;
+  isDaySection: boolean;
+  sortOrder: number;
   html: string;
   caption: string;
+}
+
+interface DaySpecial {
+  day: string;
+  dayKey: string;
+  src: string;
+  alt: string;
+  caption: string;
+  detailsHtml: SafeHtml;
+}
+
+interface ExtraSpecial {
+  key: string;
+  caption: string;
+  detailsHtml: SafeHtml;
 }
 
 function normalizeHtml(html: string): string {
@@ -90,43 +109,79 @@ export class DailySpecialsGalleryComponent {
     }
   ];
 
-  protected readonly activeIndex = signal(this.getStartingSlideIndex());
-  protected readonly activeSlide = computed(() => this.slides[this.activeIndex()]);
-  private readonly activeContent = toSignal(
-    toObservable(this.activeSlide).pipe(
-      switchMap(slide =>
-        this.http.get<{ html: string; caption: string } | null>(`/api/gallery/${slide.dayKey}`).pipe(
-          map(response => ({
-            html: normalizeHtml(response?.html ?? ''),
-            caption: response?.caption?.trim() ?? ''
-          })),
-          catchError(() => of({ html: '<p>Special details are unavailable right now.</p>', caption: '' }))
-        )
-      )
+  private readonly dayKeys = this.slides.map(slide => slide.dayKey);
+  private readonly todayDayKey = signal(this.getTodayDayKey());
+
+  private readonly galleryContent = toSignal(
+    this.http.get<GalleryContent[] | null>('/api/gallery').pipe(
+      map(response =>
+        (response ?? []).map(item => ({
+          ...item,
+          html: normalizeHtml(item.html ?? ''),
+          caption: (item.caption ?? '').trim()
+        }))
+      ),
+      catchError(() => of([]))
     ),
-    { initialValue: { html: '<p>Loading details...</p>', caption: '' } }
-  );
-  protected readonly activeCaption = computed(() =>
-    (this.activeContent()?.caption || '').trim() || this.activeSlide().defaultCaption
-  );
-  protected readonly activeDetailsHtml = computed<SafeHtml>(() =>
-    this.sanitizer.bypassSecurityTrustHtml(this.activeContent()?.html ?? '<p>Loading details...</p>')
+    { initialValue: [] }
   );
 
-  protected nextSlide(): void {
-    this.activeIndex.update(i => (i + 1) % this.slides.length);
-  }
+  private readonly dayContentByKey = computed(() => {
+    const lookup = new Map<string, GalleryContent>();
+    for (const item of this.galleryContent()) {
+      if (!item.isDaySection || !item.day) {
+        continue;
+      }
+      lookup.set(item.day.toLowerCase(), item);
+    }
+    return lookup;
+  });
 
-  protected previousSlide(): void {
-    this.activeIndex.update(i => (i - 1 + this.slides.length) % this.slides.length);
-  }
+  private readonly orderedDayKeys = computed(() => {
+    const keys = [...this.dayKeys];
+    const today = this.todayDayKey();
+    const startIndex = keys.indexOf(today);
 
-  protected jumpToSlide(index: number): void {
-    this.activeIndex.set(index);
-  }
+    if (startIndex <= 0) {
+      return keys;
+    }
 
-  private getStartingSlideIndex(): number {
+    return [...keys.slice(startIndex), ...keys.slice(0, startIndex)];
+  });
+
+  protected readonly daySpecials = computed<DaySpecial[]>(() =>
+    this.orderedDayKeys().map(dayKey => {
+      const slide = this.slides.find(item => item.dayKey === dayKey)!;
+      const savedContent = this.dayContentByKey().get(dayKey);
+      const html = savedContent?.html?.trim() || '<p>Special details are unavailable right now.</p>';
+
+      return {
+        day: slide.day,
+        dayKey,
+        src: slide.src,
+        alt: slide.alt,
+        caption: savedContent?.caption || slide.defaultCaption,
+        detailsHtml: this.sanitizer.bypassSecurityTrustHtml(html)
+      };
+    })
+  );
+
+  protected readonly extraSpecials = computed<ExtraSpecial[]>(() =>
+    this.galleryContent()
+      .filter(item => !item.isDaySection)
+      .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
+      .map(item => ({
+        key: item.key,
+        caption: item.caption || 'Additional Special',
+        detailsHtml: this.sanitizer.bypassSecurityTrustHtml(
+          item.html?.trim() || '<p>Special details are unavailable right now.</p>'
+        )
+      }))
+  );
+
+  private getTodayDayKey(): string {
     const dayOfWeek = new Date().getDay();
-    return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const index = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    return this.dayKeys[index] ?? 'monday';
   }
 }

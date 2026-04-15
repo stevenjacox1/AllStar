@@ -40,6 +40,7 @@ testem.log
 /typings
 __screenshots__/
 api/local.settings.json
+.azurite/
 
 # System files
 .DS_Store

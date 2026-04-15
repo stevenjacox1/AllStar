@@ -1,19 +1,55 @@
 <div class="gallery-editor px-6 py-8">
   <h2 class="text-3xl font-bold text-white mb-6">Gallery Content Editor</h2>
 
-  <!-- Day Selector Tabs -->
+  <!-- Section Selector Tabs -->
   <div class="mb-6">
-    <p class="text-gray-300 text-sm mb-3">Select Day:</p>
+    <p class="text-gray-300 text-sm mb-3">Daily Sections:</p>
     <div class="flex flex-wrap gap-2">
       @for (day of days; track day) {
         <button
-          (click)="selectDay(day)"
-          [class.bg-red-600]="selectedDay() === day"
-          [class.bg-gray-700]="selectedDay() !== day"
+          (click)="selectKey(day)"
+          [class.bg-red-600]="selectedKey() === day"
+          [class.bg-gray-700]="selectedKey() !== day"
           class="px-4 py-2 rounded text-white capitalize font-semibold transition hover:bg-red-700"
         >
           {{ day }}
         </button>
+      }
+    </div>
+
+    <div class="mt-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
+      <p class="text-gray-300 text-sm mb-3">Additional Sections (shown at the bottom of Daily Specials):</p>
+
+      <div class="flex flex-col gap-3 md:flex-row md:items-center">
+        <input
+          type="text"
+          [ngModel]="newSectionTitle()"
+          (ngModelChange)="newSectionTitle.set($event)"
+          class="w-full md:max-w-sm px-4 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-red-600"
+          placeholder="New section title..."
+        />
+        <button
+          (click)="createSection()"
+          [disabled]="isSaving()"
+          class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded transition"
+        >
+          Create Section
+        </button>
+      </div>
+
+      @if (extraSections().length > 0) {
+        <div class="mt-4 flex flex-wrap gap-2">
+          @for (section of extraSections(); track section.key) {
+            <button
+              (click)="selectKey(section.key)"
+              [class.bg-red-600]="selectedKey() === section.key"
+              [class.bg-gray-700]="selectedKey() !== section.key"
+              class="px-4 py-2 rounded text-white font-semibold transition hover:bg-red-700"
+            >
+              {{ section.caption }}
+            </button>
+          }
+        </div>
       }
     </div>
   </div>
@@ -42,10 +78,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- HTML Editor -->
       <div>
-        <h3 class="text-xl font-semibold text-white mb-3">HTML Editor</h3>
+        <h3 class="text-xl font-semibold text-white mb-3">Editing: <span class="capitalize">{{ selectedSectionLabel() }}</span></h3>
 
         <div class="mb-4">
-          <label for="slide-caption" class="block text-gray-300 text-sm mb-2">Slide Caption</label>
+          <label for="slide-caption" class="block text-gray-300 text-sm mb-2">Section Title</label>
           <input
             id="slide-caption"
             type="text"
@@ -111,7 +147,7 @@
             [disabled]="isSaving()"
             class="px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded transition"
           >
-            {{ isSaving() ? 'Saving...' : 'Save Content' }}
+            {{ isSaving() ? 'Saving...' : 'Save Section' }}
           </button>
           <button
             (click)="clearContent()"

@@ -3,6 +3,7 @@ const { TableClient } = require('@azure/data-tables');
 const TABLE_NAME = 'gallery';
 const PARTITION_KEY = 'gallery';
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const EXTRA_PREFIX = 'extra:';
 const DEFAULT_CAPTIONS = {
   monday: 'Miller Monday',
   tuesday: 'Taco Tuesday',
@@ -39,12 +40,59 @@ function isValidDay(day) {
   return DAYS.includes(day.toLowerCase());
 }
 
+function toExtraSlug(value) {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function toExtraRowKey(value) {
+  const trimmed = String(value || '').toLowerCase().trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.startsWith(EXTRA_PREFIX)) {
+    const raw = trimmed.slice(EXTRA_PREFIX.length);
+    const slug = toExtraSlug(raw);
+    return slug ? `${EXTRA_PREFIX}${slug}` : '';
+  }
+
+  const slug = toExtraSlug(trimmed);
+  return slug ? `${EXTRA_PREFIX}${slug}` : '';
+}
+
 function normalizeHtml(html) {
   return html.replace(/font-color\s*:/gi, 'color:');
 }
 
 function getDefaultCaption(dayKey) {
   return DEFAULT_CAPTIONS[dayKey] || '';
+}
+
+function toGalleryItem(entity) {
+  const key = String(entity.rowKey || '').toLowerCase();
+  const day = isValidDay(key)
+    ? key
+    : (typeof entity.day === 'string' && isValidDay(entity.day) ? entity.day.toLowerCase() : null);
+  const isDaySection = day !== null;
+  const sortOrder = Number.isFinite(Number(entity.sortOrder))
+    ? Number(entity.sortOrder)
+    : (isDaySection ? DAYS.indexOf(day) : Number.MAX_SAFE_INTEGER);
+
+  return {
+    key,
+    day,
+    isDaySection,
+    sortOrder,
+    html: normalizeHtml(entity.html || entity.markdown || ''),
+    caption: entity.caption || (day ? getDefaultCaption(day) : 'Additional Special')
+  };
 }
 
 module.exports = async function (context, req) {
@@ -62,12 +110,11 @@ module.exports = async function (context, req) {
       for await (const entity of client.listEntities({
         queryOptions: { filter: `PartitionKey eq '${PARTITION_KEY}'` }
       })) {
-        items.push({
-          day: entity.rowKey,
-          html: normalizeHtml(entity.html || entity.markdown || ''),
-          caption: entity.caption || getDefaultCaption(entity.rowKey)
-        });
+        items.push(toGalleryItem(entity));
       }
+
+      items.sort((a, b) => a.sortOrder - b.sortOrder || a.caption.localeCompare(b.caption));
+
       context.res = {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -91,11 +138,7 @@ module.exports = async function (context, req) {
         context.res = {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
-          body: {
-            day: entity.rowKey,
-            html: normalizeHtml(entity.html || entity.markdown || ''),
-            caption: entity.caption || getDefaultCaption(entity.rowKey)
-          }
+          body: toGalleryItem(entity)
         };
         return;
       } catch (error) {
@@ -112,6 +155,70 @@ module.exports = async function (context, req) {
             body: { error: 'Failed to retrieve gallery item' }
           };
         }
+        return;
+      }
+    }
+
+    // POST /api/gallery - create/update non-day section
+    if (method === 'POST') {
+      const html = typeof payload.html === 'string'
+        ? payload.html
+        : (typeof payload.markdown === 'string' ? payload.markdown : null);
+      const caption = typeof payload.caption === 'string' ? payload.caption.trim() : '';
+      const rowKey = toExtraRowKey(payload.key || payload.sectionKey || caption);
+      const sortOrder = Number.isFinite(Number(payload.sortOrder))
+        ? Number(payload.sortOrder)
+        : Date.now();
+
+      if (!rowKey) {
+        context.res = {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+          body: { error: 'A key or caption is required to create a section' }
+        };
+        return;
+      }
+
+      if (html == null || !html.trim()) {
+        context.res = {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+          body: { error: 'html field is required and must be a non-empty string' }
+        };
+        return;
+      }
+
+      if (!caption) {
+        context.res = {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+          body: { error: 'caption field is required and must be a non-empty string' }
+        };
+        return;
+      }
+
+      try {
+        const normalizedHtml = normalizeHtml(html);
+        const entity = {
+          partitionKey: PARTITION_KEY,
+          rowKey,
+          html: normalizedHtml,
+          caption,
+          sortOrder
+        };
+        await client.upsertEntity(entity);
+        context.res = {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+          body: toGalleryItem(entity)
+        };
+        return;
+      } catch (error) {
+        context.res = {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+          body: { error: 'Failed to save gallery section' }
+        };
         return;
       }
     }
@@ -154,6 +261,9 @@ module.exports = async function (context, req) {
         const entity = {
           partitionKey: PARTITION_KEY,
           rowKey: day.toLowerCase(),
+          day: day.toLowerCase(),
+          isDaySection: true,
+          sortOrder: DAYS.indexOf(day.toLowerCase()),
           html: normalizedHtml,
           caption
         };
@@ -161,11 +271,7 @@ module.exports = async function (context, req) {
         context.res = {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
-          body: {
-            day: entity.rowKey,
-            html: entity.html,
-            caption: entity.caption
-          }
+          body: toGalleryItem(entity)
         };
         return;
       } catch (error) {
