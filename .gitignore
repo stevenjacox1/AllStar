@@ -41,6 +41,9 @@ testem.log
 __screenshots__/
 api/local.settings.json
 .azurite/
+AzuriteConfig
+__azurite_db_*.json
+__blobstorage__/
 
 # System files
 .DS_Store

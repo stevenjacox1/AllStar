@@ -26,6 +26,7 @@ interface GalleryContent {
   sortOrder: number;
   html: string;
   caption: string;
+  imageUrl: string;
 }
 
 interface DaySpecial {
@@ -40,8 +41,11 @@ interface DaySpecial {
 interface ExtraSpecial {
   key: string;
   caption: string;
+  imageUrl: string;
   detailsHtml: SafeHtml;
 }
+
+const GALLERY_IMAGE_VERSION = '20260416';
 
 function normalizeHtml(html: string): string {
   return html.replace(/font-color\s*:/gi, 'color:');
@@ -96,7 +100,7 @@ export class DailySpecialsGalleryComponent {
     {
       day: 'Saturday',
       dayKey: 'saturday',
-      src: '/gallery/saturday.jpg',
+      src: '/gallery/saturday.png',
       alt: 'Svedka Saturday',
       defaultCaption: 'Svedka Saturday'
     },
@@ -158,7 +162,7 @@ export class DailySpecialsGalleryComponent {
       return {
         day: slide.day,
         dayKey,
-        src: slide.src,
+        src: this.withCacheBust(savedContent?.imageUrl || slide.src),
         alt: slide.alt,
         caption: savedContent?.caption || slide.defaultCaption,
         detailsHtml: this.sanitizer.bypassSecurityTrustHtml(html)
@@ -173,11 +177,21 @@ export class DailySpecialsGalleryComponent {
       .map(item => ({
         key: item.key,
         caption: item.caption || 'Additional Special',
+        imageUrl: this.withCacheBust(item.imageUrl || ''),
         detailsHtml: this.sanitizer.bypassSecurityTrustHtml(
           item.html?.trim() || '<p>Special details are unavailable right now.</p>'
         )
       }))
   );
+
+  private withCacheBust(src: string): string {
+    if (!src || !src.startsWith('/')) {
+      return src;
+    }
+
+    const separator = src.includes('?') ? '&' : '?';
+    return `${src}${separator}v=${GALLERY_IMAGE_VERSION}`;
+  }
 
   private getTodayDayKey(): string {
     const dayOfWeek = new Date().getDay();

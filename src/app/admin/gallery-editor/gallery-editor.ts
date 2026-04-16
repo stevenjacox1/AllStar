@@ -11,7 +11,26 @@ interface GalleryItem {
   sortOrder: number;
   html: string;
   caption: string;
+  imageUrl: string;
 }
+
+interface EditableCard {
+  key: string;
+  label: string;
+  isDaySection: boolean;
+}
+
+const DEFAULT_DAY_CAPTIONS: Record<string, string> = {
+  monday: 'Miller Monday',
+  tuesday: 'Taco Tuesday',
+  wednesday: 'Hornitos Humpday',
+  thursday: 'Crown Royal Thursday',
+  friday: 'Fireball Friday',
+  saturday: 'Svedka Saturday',
+  sunday: 'Sunday All-Day Action'
+};
+
+const DEFAULT_SECTION_HTML = '<p>Special details are unavailable right now.</p>';
 
 function normalizeHtml(html: string): string {
   return html.replace(/font-color\s*:/gi, 'color:');
@@ -33,9 +52,14 @@ export class GalleryEditorComponent {
   protected readonly allItems = signal<GalleryItem[]>([]);
   protected readonly html = signal<string>('');
   protected readonly caption = signal<string>('');
+  protected readonly imageUrl = signal<string>('');
   protected readonly newSectionTitle = signal<string>('');
   protected readonly loading = signal<boolean>(false);
   protected readonly isSaving = signal<boolean>(false);
+  protected readonly uploadingImageKey = signal<string | null>(null);
+  protected readonly savingImageKey = signal<string | null>(null);
+  protected readonly imageSaveSuccessKey = signal<string>('');
+  protected readonly lastUploadedFileNames = signal<Record<string, string>>({});
   protected readonly error = signal<string>('');
   protected readonly saveSuccess = signal<boolean>(false);
 
@@ -57,6 +81,22 @@ export class GalleryEditorComponent {
   protected readonly htmlPreview = computed<SafeHtml>(() =>
     this.sanitizer.bypassSecurityTrustHtml(normalizeHtml(this.html()))
   );
+
+  protected readonly editableCards = computed<EditableCard[]>(() => {
+    const extraCards = this.extraSections().map(section => ({
+      key: section.key,
+      label: section.caption,
+      isDaySection: false
+    }));
+
+    const dayCards = this.days.map(day => ({
+      key: day,
+      label: DEFAULT_DAY_CAPTIONS[day] || day,
+      isDaySection: true
+    }));
+
+    return [...dayCards, ...extraCards];
+  });
 
   constructor() {
     this.refreshAllContent();
@@ -88,6 +128,7 @@ export class GalleryEditorComponent {
       const existingSection = this.extraSections().find(section => section.key === key);
       this.html.set(existingSection?.html ?? '');
       this.caption.set(existingSection?.caption ?? '');
+      this.imageUrl.set(existingSection?.imageUrl ?? '');
       this.loading.set(false);
       return;
     }
@@ -98,17 +139,20 @@ export class GalleryEditorComponent {
         next: (item) => {
           this.html.set(item?.html ?? '');
           this.caption.set(item?.caption ?? '');
+          this.imageUrl.set(item?.imageUrl ?? '');
           this.loading.set(false);
         },
         error: (err) => {
           if (err.status === 404 || err.status === 204) {
             this.html.set('');
             this.caption.set('');
+            this.imageUrl.set('');
             this.error.set('');
           } else {
             console.error('Error loading gallery content:', err);
             this.html.set('');
             this.caption.set('');
+            this.imageUrl.set('');
             this.error.set('Failed to load gallery content');
           }
           this.loading.set(false);
@@ -186,6 +230,7 @@ export class GalleryEditorComponent {
     const key = this.selectedKey();
     const content = normalizeHtml(this.html());
     const caption = this.caption().trim();
+    const imageUrl = this.imageUrl().trim();
 
     if (!content.trim()) {
       this.error.set('HTML content cannot be empty');
@@ -208,6 +253,7 @@ export class GalleryEditorComponent {
           key,
           html: content,
           caption,
+          imageUrl,
           sortOrder: existingSection?.sortOrder
         })
         .subscribe({
@@ -229,7 +275,7 @@ export class GalleryEditorComponent {
     }
 
     this.http
-      .put<GalleryItem>(`/api/gallery/${key}`, { html: content, caption })
+      .put<GalleryItem>(`/api/gallery/${key}`, { html: content, caption, imageUrl })
       .subscribe({
         next: () => {
           this.html.set(content);
@@ -297,5 +343,168 @@ export class GalleryEditorComponent {
     if (confirm(`Are you sure you want to clear all content for ${selectedLabel}?`)) {
       this.html.set('');
     }
+  }
+
+  clearImage(): void {
+    this.imageUrl.set('');
+  }
+
+  protected isImageBusyForKey(key: string): boolean {
+    return this.uploadingImageKey() === key || this.savingImageKey() === key;
+  }
+
+  protected cardImageUrl(key: string): string {
+    if (this.selectedKey() === key) {
+      return this.imageUrl().trim();
+    }
+
+    return this.allItems().find(item => item.key === key)?.imageUrl?.trim() ?? '';
+  }
+
+  protected uploadedFileNameForKey(key: string): string {
+    return this.lastUploadedFileNames()[key] ?? '';
+  }
+
+  protected uploadImageForKey(key: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.error.set('Only image files are allowed');
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.error.set('Image must be 5MB or smaller');
+      input.value = '';
+      return;
+    }
+
+    this.uploadingImageKey.set(key);
+    this.imageSaveSuccessKey.set('');
+    this.error.set('');
+    const uploadedFileName = file.name;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const imageDataUrl = typeof reader.result === 'string' ? reader.result : '';
+
+      this.http
+        .post<{ imageUrl: string }>('/api/gallery-image', {
+          sectionKey: key,
+          imageDataUrl
+        })
+        .subscribe({
+          next: (result) => {
+            this.uploadingImageKey.set(null);
+            const uploadedImageUrl = (result.imageUrl || '').trim();
+
+            if (!uploadedImageUrl) {
+              this.error.set('Image upload did not return a usable URL');
+              input.value = '';
+              return;
+            }
+
+            this.persistImageUrl(key, uploadedImageUrl, uploadedFileName);
+            input.value = '';
+          },
+          error: (err) => {
+            console.error('Error uploading gallery image:', err);
+            this.error.set('Failed to upload image');
+            this.uploadingImageKey.set(null);
+            input.value = '';
+          }
+        });
+    };
+
+    reader.onerror = () => {
+      this.error.set('Failed to read selected image');
+      this.uploadingImageKey.set(null);
+      input.value = '';
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  uploadImage(event: Event): void {
+    this.uploadImageForKey(this.selectedKey(), event);
+  }
+
+  private persistImageUrl(key: string, imageUrl: string, uploadedFileName: string): void {
+    const existing = this.allItems().find(item => item.key === key);
+    const html = normalizeHtml(
+      (existing?.html ?? (this.selectedKey() === key ? this.html() : '')).trim() || DEFAULT_SECTION_HTML
+    );
+    const caption = (
+      (existing?.caption ?? (this.selectedKey() === key ? this.caption() : '')).trim() || this.defaultCaptionForKey(key)
+    );
+
+    this.savingImageKey.set(key);
+
+    if (this.isDayKey(key)) {
+      this.http
+        .put<GalleryItem>(`/api/gallery/${key}`, { html, caption, imageUrl })
+        .subscribe({
+          next: () => this.handleImageSaveSuccess(key, imageUrl, uploadedFileName),
+          error: (err) => {
+            console.error('Error saving day image:', err);
+            this.savingImageKey.set(null);
+            this.error.set('Failed to save image for selected card');
+          }
+        });
+      return;
+    }
+
+    this.http
+      .post<GalleryItem>('/api/gallery', {
+        key,
+        html,
+        caption,
+        imageUrl,
+        sortOrder: existing?.sortOrder
+      })
+      .subscribe({
+        next: () => this.handleImageSaveSuccess(key, imageUrl, uploadedFileName),
+        error: (err) => {
+          console.error('Error saving extra section image:', err);
+          this.savingImageKey.set(null);
+          this.error.set('Failed to save image for selected card');
+        }
+      });
+  }
+
+  private handleImageSaveSuccess(key: string, imageUrl: string, uploadedFileName: string): void {
+    if (this.selectedKey() === key) {
+      this.imageUrl.set(imageUrl);
+    }
+
+    if (uploadedFileName) {
+      this.lastUploadedFileNames.update(fileNames => ({
+        ...fileNames,
+        [key]: uploadedFileName
+      }));
+    }
+
+    this.refreshAllContent();
+    this.savingImageKey.set(null);
+    this.imageSaveSuccessKey.set(key);
+    setTimeout(() => {
+      if (this.imageSaveSuccessKey() === key) {
+        this.imageSaveSuccessKey.set('');
+      }
+    }, 2500);
+  }
+
+  private defaultCaptionForKey(key: string): string {
+    if (this.isDayKey(key)) {
+      return DEFAULT_DAY_CAPTIONS[key] || key;
+    }
+
+    return this.extraSections().find(section => section.key === key)?.caption || 'Additional Special';
   }
 }

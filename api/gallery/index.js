@@ -91,7 +91,8 @@ function toGalleryItem(entity) {
     isDaySection,
     sortOrder,
     html: normalizeHtml(entity.html || entity.markdown || ''),
-    caption: entity.caption || (day ? getDefaultCaption(day) : 'Additional Special')
+    caption: entity.caption || (day ? getDefaultCaption(day) : 'Additional Special'),
+    imageUrl: entity.imageUrl || ''
   };
 }
 
@@ -165,6 +166,7 @@ module.exports = async function (context, req) {
         ? payload.html
         : (typeof payload.markdown === 'string' ? payload.markdown : null);
       const caption = typeof payload.caption === 'string' ? payload.caption.trim() : '';
+      const imageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl.trim() : '';
       const rowKey = toExtraRowKey(payload.key || payload.sectionKey || caption);
       const sortOrder = Number.isFinite(Number(payload.sortOrder))
         ? Number(payload.sortOrder)
@@ -204,7 +206,8 @@ module.exports = async function (context, req) {
           rowKey,
           html: normalizedHtml,
           caption,
-          sortOrder
+          sortOrder,
+          imageUrl
         };
         await client.upsertEntity(entity);
         context.res = {
@@ -247,6 +250,7 @@ module.exports = async function (context, req) {
       const caption = typeof payload.caption === 'string'
         ? payload.caption.trim()
         : getDefaultCaption(day.toLowerCase());
+      const imageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl.trim() : '';
 
       if (html == null || !html.trim()) {
         context.res = {
@@ -265,7 +269,8 @@ module.exports = async function (context, req) {
           isDaySection: true,
           sortOrder: DAYS.indexOf(day.toLowerCase()),
           html: normalizedHtml,
-          caption
+          caption,
+          imageUrl
         };
         await client.upsertEntity(entity);
         context.res = {

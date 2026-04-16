@@ -51,6 +51,46 @@
           }
         </div>
       }
+
+      <div class="mt-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
+        <p class="text-gray-300 text-sm mb-3">Card Background Image Uploads (all gallery cards):</p>
+        <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          @for (card of editableCards(); track card.key) {
+            <div class="rounded-lg border border-gray-700 bg-gray-950/70 p-3">
+              <p class="text-sm font-semibold text-white">{{ card.label }}</p>
+              <p class="text-xs text-gray-400">{{ card.key }}</p>
+
+              <div class="mt-3 flex flex-col gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="uploadImageForKey(card.key, $event)"
+                  [disabled]="isImageBusyForKey(card.key) || isSaving()"
+                  class="block w-full text-xs text-gray-300 file:mr-3 file:rounded file:border-0 file:bg-red-700 file:px-3 file:py-2 file:text-white hover:file:bg-red-600"
+                />
+
+                @if (cardImageUrl(card.key)) {
+                  <img
+                    [src]="cardImageUrl(card.key)"
+                    [alt]="card.label + ' image preview'"
+                    class="max-h-36 w-full rounded border border-gray-700 object-cover"
+                  />
+                }
+
+                @if (uploadingImageKey() === card.key) {
+                  <p class="text-xs text-yellow-300">Uploading image...</p>
+                }
+                @if (savingImageKey() === card.key) {
+                  <p class="text-xs text-yellow-300">Saving image URL...</p>
+                }
+                @if (imageSaveSuccessKey() === card.key) {
+                  <p class="text-xs text-green-300">Uploaded: {{ uploadedFileNameForKey(card.key) || 'Image saved for this card' }}</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
     </div>
   </div>
 
@@ -90,6 +130,44 @@
             class="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-red-600"
             placeholder="Enter slide caption..."
           />
+        </div>
+
+        <div class="mb-4 rounded-lg border border-gray-700 bg-gray-900/70 p-4">
+          <label for="section-image-upload" class="block text-gray-300 text-sm mb-2">Section Image</label>
+          <div class="flex flex-col gap-3 md:flex-row md:items-center">
+            <input
+              id="section-image-upload"
+              type="file"
+              accept="image/*"
+              (change)="uploadImage($event)"
+              [disabled]="isImageBusyForKey(selectedKey()) || isSaving()"
+              class="block w-full text-sm text-gray-300 file:mr-3 file:rounded file:border-0 file:bg-red-700 file:px-3 file:py-2 file:text-white hover:file:bg-red-600"
+            />
+            <button
+              type="button"
+              (click)="clearImage()"
+              [disabled]="isSaving() || isImageBusyForKey(selectedKey()) || !imageUrl()"
+              class="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white font-semibold rounded transition"
+            >
+              Remove Image
+            </button>
+          </div>
+          @if (uploadingImageKey() === selectedKey()) {
+            <p class="mt-2 text-sm text-yellow-300">Uploading image...</p>
+          }
+          @if (savingImageKey() === selectedKey()) {
+            <p class="mt-2 text-sm text-yellow-300">Saving image URL...</p>
+          }
+          @if (imageSaveSuccessKey() === selectedKey()) {
+            <p class="mt-2 text-sm text-green-300">Uploaded: {{ uploadedFileNameForKey(selectedKey()) || 'Image saved for this section' }}</p>
+          }
+          @if (imageUrl()) {
+            <img
+              [src]="imageUrl()"
+              alt="Selected section image preview"
+              class="mt-3 max-h-56 w-full rounded border border-gray-700 object-cover"
+            />
+          }
         </div>
 
         <!-- Toolbar -->
@@ -166,6 +244,12 @@
           class="w-full h-96 p-4 bg-gray-900 border border-gray-700 rounded text-gray-100 overflow-y-auto [&_p]:mb-3 [&_p]:leading-relaxed [&_strong]:text-white [&_strong]:font-bold [&_em]:text-gray-300 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-red-400 [&_ul]:ml-4 [&_li]:mb-2 [&_a]:text-blue-400 [&_a]:underline [&_a]:hover:text-blue-300"
           [innerHTML]="htmlPreview()"
         ></div>
+        @if (imageUrl()) {
+          <div class="mt-4">
+            <p class="text-gray-300 text-sm mb-2">Image Preview</p>
+            <img [src]="imageUrl()" alt="Section image preview" class="max-h-56 w-full rounded border border-gray-700 object-cover" />
+          </div>
+        }
       </div>
     </div>
   }
