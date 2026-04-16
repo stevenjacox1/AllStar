@@ -1,4 +1,9 @@
-const { BlobServiceClient } = require('@azure/storage-blob');
+const {
+  BlobServiceClient,
+  BlobSASPermissions,
+  StorageSharedKeyCredential,
+  generateBlobSASQueryParameters
+} = require('@azure/storage-blob');
 
 const CONTAINER_NAME = 'gallery-images';
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -9,6 +14,45 @@ function getConnectionString() {
     throw new Error('Missing AZURE_TABLE_STORAGE_CONNECTION_STRING setting.');
   }
   return connectionString;
+}
+
+function parseConnectionString(connectionString) {
+  return Object.fromEntries(
+    connectionString
+      .split(';')
+      .map(part => part.trim())
+      .filter(Boolean)
+      .map(part => {
+        const separatorIndex = part.indexOf('=');
+        return [part.slice(0, separatorIndex), part.slice(separatorIndex + 1)];
+      })
+  );
+}
+
+function getSharedKeyCredential(connectionString) {
+  if (connectionString === 'UseDevelopmentStorage=true') {
+    return null;
+  }
+
+  const parts = parseConnectionString(connectionString);
+  return new StorageSharedKeyCredential(parts.AccountName, parts.AccountKey);
+}
+
+function buildReadableBlobUrl(blobClient, sharedKeyCredential) {
+  const startsOn = new Date(Date.now() - 5 * 60 * 1000);
+  const expiresOn = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 5);
+  const sasToken = generateBlobSASQueryParameters(
+    {
+      containerName: blobClient.containerName,
+      blobName: blobClient.name,
+      permissions: BlobSASPermissions.parse('r'),
+      startsOn,
+      expiresOn
+    },
+    sharedKeyCredential
+  ).toString();
+
+  return `${blobClient.url}?${sasToken}`;
 }
 
 function readBody(req) {
@@ -58,6 +102,7 @@ module.exports = async function (context, req) {
     const body = readBody(req);
     const sectionKey = normalizeSectionKey(body.sectionKey);
     const parsed = parseDataUri(body.imageDataUrl);
+    const connectionString = getConnectionString();
 
     if (!sectionKey) {
       context.res = {
@@ -86,9 +131,15 @@ module.exports = async function (context, req) {
       return;
     }
 
-    const blobServiceClient = BlobServiceClient.fromConnectionString(getConnectionString());
+    const isDevelopmentStorage = connectionString === 'UseDevelopmentStorage=true';
+    const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+    const sharedKeyCredential = getSharedKeyCredential(connectionString);
     const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
-    await containerClient.createIfNotExists({ access: 'blob' });
+    if (isDevelopmentStorage) {
+      await containerClient.createIfNotExists({ access: 'blob' });
+    } else {
+      await containerClient.createIfNotExists();
+    }
 
     const blobName = buildBlobName(sectionKey, parsed.extension);
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
@@ -101,7 +152,9 @@ module.exports = async function (context, req) {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
       body: {
-        imageUrl: blockBlobClient.url,
+        imageUrl: isDevelopmentStorage
+          ? blockBlobClient.url
+          : buildReadableBlobUrl(blockBlobClient, sharedKeyCredential),
         blobName
       }
     };

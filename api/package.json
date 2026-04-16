@@ -4,7 +4,9 @@
   "private": true,
   "description": "Azure Functions API for ASSBar events",
   "scripts": {
-    "sync:azurite": "node ./scripts/sync-azure-to-azurite.js"
+    "sync:azurite": "node ./scripts/sync-azure-to-azurite.js",
+    "sync:azurite:gallery:azure": "node ./scripts/sync-azurite-gallery-to-azure.js",
+    "sync:azurite:azure": "node ./scripts/sync-azurite-to-azure.js"
   },
   "dependencies": {
     "@azure/data-tables": "^13.3.1",
