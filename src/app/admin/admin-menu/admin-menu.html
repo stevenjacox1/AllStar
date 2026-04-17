@@ -1,0 +1,168 @@
+<div class="space-y-4">
+
+  <!-- Header bar -->
+  <div class="flex items-center justify-between">
+    <h2 class="text-2xl font-bold text-yellow-400">Menu Editor</h2>
+    <div class="flex items-center gap-3">
+      @if (saveStatus() === 'success') {
+        <span class="text-sm font-medium text-green-400">&#10003; Saved!</span>
+      }
+      @if (saveStatus() === 'error') {
+        <span class="text-sm font-medium text-red-400">Save failed. Try again.</span>
+      }
+      <button
+        type="button"
+        (click)="save()"
+        [disabled]="saving() || loading()"
+        class="rounded-lg bg-yellow-500 px-5 py-2 font-bold text-gray-950 transition hover:bg-yellow-400 disabled:opacity-50"
+      >
+        {{ saving() ? 'Saving…' : 'Save Menu' }}
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="text-gray-400">Loading menu data…</p>
+  } @else {
+
+    <!-- Sections list -->
+    @for (section of sections(); track section.id; let i = $index) {
+      <div class="rounded-xl border border-gray-700 bg-gray-900">
+
+        <!-- Section header row -->
+        <div class="flex items-center gap-2 px-4 py-3">
+          <!-- Expand toggle -->
+          <button
+            type="button"
+            (click)="toggleSection(section.id)"
+            class="flex-1 text-left font-bold text-white hover:text-yellow-300 transition"
+          >
+            <span class="mr-2 text-red-500 text-xs">{{ isExpanded(section.id) ? '▼' : '▶' }}</span>
+            {{ section.title }}
+            <span class="ml-2 text-xs font-normal text-gray-500">({{ section.items.length }} items · {{ section.type }})</span>
+          </button>
+
+          <!-- Move up/down -->
+          <button type="button" (click)="moveSection(section, -1)" [disabled]="i === 0"
+            class="rounded px-2 py-1 text-gray-400 hover:text-white disabled:opacity-30 text-xs">▲</button>
+          <button type="button" (click)="moveSection(section, 1)" [disabled]="i === sections().length - 1"
+            class="rounded px-2 py-1 text-gray-400 hover:text-white disabled:opacity-30 text-xs">▼</button>
+
+          <!-- Delete section -->
+          <button type="button" (click)="removeSection(section)"
+            class="rounded px-2 py-1 text-red-500 hover:text-red-400 text-xs font-bold">✕</button>
+        </div>
+
+        <!-- Section body (expanded) -->
+        @if (isExpanded(section.id)) {
+          <div class="border-t border-gray-700 px-4 pb-4 pt-3 space-y-4">
+
+            <!-- Section meta fields -->
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div class="sm:col-span-2">
+                <label class="mb-1 block text-xs text-gray-400">Section Title</label>
+                <input
+                  type="text"
+                  [ngModel]="section.title"
+                  (ngModelChange)="updateSectionTitle(section, $event)"
+                  class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-yellow-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs text-gray-400">Display Type</label>
+                <select
+                  [ngModel]="section.type"
+                  (ngModelChange)="updateSectionType(section, $event)"
+                  class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-yellow-500 focus:outline-none"
+                >
+                  <option value="items">List (name + price + desc)</option>
+                  <option value="grid">Grid cards</option>
+                  <option value="tags">Pill tags (beer)</option>
+                </select>
+              </div>
+              <div class="sm:col-span-3">
+                <label class="mb-1 block text-xs text-gray-400">Note (optional, shown in yellow italic below heading)</label>
+                <input
+                  type="text"
+                  [ngModel]="section.note ?? ''"
+                  (ngModelChange)="updateSectionNote(section, $event)"
+                  placeholder="e.g. Sunday–Thursday · 3PM–6PM"
+                  class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-yellow-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Items -->
+            <div class="space-y-2">
+              <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Items</p>
+              @for (item of section.items; track item.id; let j = $index) {
+                <div class="flex gap-2 items-start rounded-lg border border-gray-700 bg-gray-800/60 p-3">
+                  <!-- Move item -->
+                  <div class="flex flex-col gap-1 pt-1">
+                    <button type="button" (click)="moveItem(section, item, -1)" [disabled]="j === 0"
+                      class="text-gray-500 hover:text-white disabled:opacity-30 text-xs leading-none">▲</button>
+                    <button type="button" (click)="moveItem(section, item, 1)" [disabled]="j === section.items.length - 1"
+                      class="text-gray-500 hover:text-white disabled:opacity-30 text-xs leading-none">▼</button>
+                  </div>
+
+                  <!-- Fields -->
+                  <div class="flex-1 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div class="sm:col-span-2">
+                      <input
+                        type="text"
+                        [ngModel]="item.name"
+                        (ngModelChange)="updateItem(item, 'name', $event)"
+                        placeholder="Item name"
+                        class="w-full rounded border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm text-white focus:border-yellow-500 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        [ngModel]="item.price"
+                        (ngModelChange)="updateItem(item, 'price', $event)"
+                        placeholder="Price (e.g. 14)"
+                        class="w-full rounded border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm text-white focus:border-yellow-500 focus:outline-none"
+                      />
+                    </div>
+                    @if (section.type !== 'tags') {
+                      <div class="sm:col-span-3">
+                        <textarea
+                          [ngModel]="item.description"
+                          (ngModelChange)="updateItem(item, 'description', $event)"
+                          placeholder="Description"
+                          rows="2"
+                          class="w-full rounded border border-gray-600 bg-gray-900 px-2 py-1.5 text-sm text-white focus:border-yellow-500 focus:outline-none resize-none"
+                        ></textarea>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Remove item -->
+                  <button type="button" (click)="removeItem(section, item)"
+                    class="pt-1 text-red-500 hover:text-red-400 text-sm font-bold">✕</button>
+                </div>
+              }
+              <button
+                type="button"
+                (click)="addItem(section)"
+                class="mt-1 rounded-lg border border-dashed border-gray-600 px-4 py-2 text-sm text-gray-400 hover:border-yellow-500 hover:text-yellow-400 transition w-full"
+              >
+                + Add Item
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Add section -->
+    <button
+      type="button"
+      (click)="addSection()"
+      class="w-full rounded-xl border border-dashed border-gray-600 py-3 text-gray-400 hover:border-yellow-500 hover:text-yellow-400 transition font-semibold"
+    >
+      + Add Section
+    </button>
+  }
+</div>

@@ -1,0 +1,302 @@
+const { BlobServiceClient } = require('@azure/storage-blob');
+
+const CONTAINER_NAME = 'menu-data';
+const BLOB_NAME = 'menu.json';
+
+const DEFAULT_MENU = {
+  sections: [
+    {
+      id: 'salads',
+      title: 'Salads',
+      type: 'items',
+      note: null,
+      items: [
+        { id: 's1', name: 'Caesar Salad', price: '14', description: 'Heart of romaine with croutons, parmesan cheese and housemade dressing. Add chicken or prawns +$6' },
+        { id: 's2', name: 'House Salad', price: '14', description: 'Baby spring mix greens, tomatoes, carrots, red onion, tossed in balsamic vinaigrette. Topped with cheddar cheese blend. Add chicken or prawns +$6' }
+      ]
+    },
+    {
+      id: 'small-bites',
+      title: 'Small Bites',
+      type: 'items',
+      note: null,
+      items: [
+        { id: 'sb1', name: 'MVP Sampler', price: '25', description: 'Four jalapeño poppers, four mozzarella sticks, onion rings, and chicken taquitos' },
+        { id: 'sb2', name: 'Loaded Chili Dog', price: '14', description: 'All beef hot dog topped with chili, cheddar cheese, sour cream, jalapeños, and red onion. Served with fries' },
+        { id: 'sb3', name: 'Quesadilla', price: '13', description: 'Flour tortilla filled with yellow onions, cilantro, fried jalapeños, cheddar cheese. Topped with sour cream. Choice of chicken, beef, or steak' },
+        { id: 'sb4', name: 'Chicken Taquitos', price: '11', description: 'Four pieces with chopped lettuce, cilantro, and onions. Drizzled with sour cream and green salsa' },
+        { id: 'sb5', name: 'Loaded Tostachos', price: '16', description: 'Topped with cheese, crispy bacon, sour cream, guacamole, olives, and tomatoes' },
+        { id: 'sb6', name: 'Margarita Prawn Skewers', price: '16', description: 'Marinated in fresh garlic, cilantro, lime juice, and Hornitos tequila. Grilled lime garnish' },
+        { id: 'sb7', name: 'Carne Asada Nacho Fries', price: '16', description: 'Carne asada, guacamole, sour cream, tomatoes, and cilantro' },
+        { id: 'sb8', name: 'House Nachos', price: '16', description: 'Your choice of chicken, beef, or steak topped with jalapeños, onion, tomatoes, cilantro, guacamole and sour cream' },
+        { id: 'sb9', name: 'Breakfast Burrito', price: '13', description: 'Four eggs scrambled with sausage, bacon, onion, cheddar cheese, and guacamole' },
+        { id: 'sb10', name: 'Mac & Cheese', price: '11', description: 'Fresh macaroni pasta mixed in our creamy cheddar sauce' }
+      ]
+    },
+    {
+      id: 'wings',
+      title: 'Fresh Wings',
+      type: 'items',
+      note: null,
+      items: [
+        { id: 'w1', name: 'Eight Wings', price: '18', description: 'Ghost Pepper, Buffalo, BBQ, Sweet Chili, Gochujang, Salt & Pepper, or Naked. Served with ranch or blue cheese' }
+      ]
+    },
+    {
+      id: 'burgers',
+      title: 'Ultimate Burgers & Sandwiches',
+      type: 'items',
+      note: null,
+      items: [
+        { id: 'b1', name: 'The Club', price: '17', description: 'Three layers on toasted bread, with bacon, lettuce, tomato, turkey, and mayo' },
+        { id: 'b2', name: 'House Meatballs', price: '18', description: 'Savory angus ground beef, topped with marinara sauce, mozzarella, parmesan cheese on a toasted pub roll' },
+        { id: 'b3', name: 'French Dip', price: '18', description: 'Thinly sliced roast beef on a French roll, Swiss cheese, au jus on the side' },
+        { id: 'b4', name: 'Cheesesteak with Mac', price: '20', description: 'Served with bell pepper blend, onion, thin julienne steak, topped with mac & cheese, bacon bits on toasted ciabatta bread' },
+        { id: 'b5', name: 'Cowboy Burger', price: '20', description: 'Loaded with onion rings, bacon, cheese, lettuce, tomato, and tangy BBQ sauce' },
+        { id: 'b6', name: 'The Jimbo Double', price: '20', description: 'Double patties, double bacon, tomatoes, lettuce, onion, cheddar and chipotle aioli' },
+        { id: 'b7', name: 'Classic Cheeseburger', price: '15', description: 'Cheddar cheese, lettuce, tomato and onion' },
+        { id: 'b8', name: 'Classic BLT', price: '16', description: 'Yukon potato bread loaded with bacon, lettuce and tomatoes. Served with fries' }
+      ]
+    },
+    {
+      id: 'entrees',
+      title: 'Entrees',
+      type: 'items',
+      note: null,
+      items: [
+        { id: 'e1', name: 'Street Tacos', price: '15', description: 'Four corn tortillas, with a choice of steak, chicken or beef. Topped with onions, cilantro and green salsa' },
+        { id: 'e2', name: 'Surf and Turf', price: '28', description: '13oz Angus ribeye steak topped with garlic, bell peppers, onion, and shrimp' },
+        { id: 'e3', name: 'Angus Ribeye', price: '25', description: 'Served with broccoli florets, zucchini, topped with caramelized onions, crimini mushrooms, and bleu cheese' },
+        { id: 'e4', name: 'Steak & Eggs', price: '23', description: '15oz ribeye steak with two eggs and fries' },
+        { id: 'e5', name: 'Bacon Prawn Pasta', price: '21', description: 'Sautéed in fresh garlic, prawns, bacon, and herbs. Served with fresh pasta and parmesan cheese' },
+        { id: 'e6', name: 'Chicken Fettuccine Alfredo', price: '20', description: 'Fresh pasta tossed in our house herb sauce and parmesan cheese' },
+        { id: 'e7', name: 'Meatball Pasta', price: '20', description: 'Homemade meatballs tossed in savory marinara, fettuccine, and parmesan' },
+        { id: 'e8', name: 'Chicken Strips and Fries', price: '16', description: 'Two jumbo chicken strips with any dipping sauce. Served with fries' }
+      ]
+    },
+    {
+      id: 'pizza',
+      title: 'Pizza',
+      type: 'grid',
+      note: 'Choose from our signature pizzas or make your own with any sauce and two toppings: zucchini, jalapeño, red onion, olives, crimini mushroom, chicken, bacon, sausage, and pepperoni',
+      items: [
+        { id: 'p1', name: 'BBQ Chicken', price: '18', description: 'Mozzarella, chicken, bacon, red onion, and BBQ drizzle' },
+        { id: 'p2', name: 'Hawaiian', price: '18', description: 'Marinara, Canadian bacon and pineapple' },
+        { id: 'p3', name: 'Supreme', price: '18', description: 'Marinara, mozzarella, pepperoni, sausage, mushroom, chicken, bacon' },
+        { id: 'p4', name: 'All-Star Pepperoni', price: '18', description: 'House made marinara and fresh mozzarella loaded with pepperoni' }
+      ]
+    },
+    {
+      id: 'addons',
+      title: 'Add-Ons',
+      type: 'grid',
+      note: null,
+      items: [
+        { id: 'a1', name: 'Guacamole', price: '3', description: '' },
+        { id: 'a2', name: 'Bacon', price: '3', description: '' },
+        { id: 'a3', name: 'Chicken', price: '5', description: '' },
+        { id: 'a4', name: 'Fresh Sautéed Veggies', price: '5', description: '' },
+        { id: 'a5', name: 'Cheese', price: '1', description: '' },
+        { id: 'a6', name: 'Eggs', price: '2', description: '' },
+        { id: 'a7', name: 'Parmesan Cheese', price: '1', description: '' }
+      ]
+    },
+    {
+      id: 'mvp',
+      title: 'MVP Favorites',
+      type: 'grid',
+      note: null,
+      items: [
+        { id: 'm1', name: 'Chips and Salsa', price: '7', description: '' },
+        { id: 'm2', name: 'French Fries', price: '8', description: '' },
+        { id: 'm3', name: 'Mozzarella Sticks', price: '10', description: '' },
+        { id: 'm4', name: 'Jalapeño Poppers', price: '10', description: '' },
+        { id: 'm5', name: 'Classic Chili', price: '9', description: '' },
+        { id: 'm6', name: 'Tots', price: '8', description: '' },
+        { id: 'm7', name: 'Onion Rings', price: '11', description: '' },
+        { id: 'm8', name: 'Spring Rolls', price: '7', description: '' }
+      ]
+    },
+    {
+      id: 'happy-hour',
+      title: 'Happy Bites – Happy Hour Menu',
+      type: 'items',
+      note: 'Sunday–Thursday · 3PM–6PM',
+      items: [
+        { id: 'hh1', name: 'All-Star Pepperoni', price: '14', description: 'Loaded with pepperoni, marinara and fresh mozzarella' },
+        { id: 'hh2', name: 'Cajun Tater Tots', price: '8', description: 'Your choice of dipping sauce' },
+        { id: 'hh3', name: 'Onion Rings', price: '8', description: 'Classic onion rings served with any dipping sauce' },
+        { id: 'hh4', name: 'Cheeseburger', price: '11', description: 'Served with tomatoes, lettuce, red onion, cheese and fries' },
+        { id: 'hh5', name: 'Chicken Strips', price: '8', description: 'Two large tender strips served with any dipping sauce' },
+        { id: 'hh6', name: 'Caesar Salad', price: '8', description: 'Heart of romaine with fresh croutons, parmesan cheese and house dressing. Add chicken or prawns +$6' },
+        { id: 'hh7', name: 'Mac & Cheese', price: '8', description: 'Fresh macaroni pasta mixed in our creamy cheddar sauce' },
+        { id: 'hh8', name: 'Jalapeño Poppers', price: '8', description: 'Five breaded jalapeños and cheese with ranch' },
+        { id: 'hh9', name: 'House Nachos', price: '10', description: 'Chicken or beef topped with jalapeño, onions, tomatoes, cilantro, guacamole and sour cream' },
+        { id: 'hh10', name: 'Mozzarella Sticks', price: '8', description: 'Five breaded cheese sticks with our house marinara' },
+        { id: 'hh11', name: 'French Fries', price: '7', description: 'Crispy golden french fries with your choice of dipping sauce' }
+      ]
+    },
+    {
+      id: 'breakfast',
+      title: 'Breakfast Menu',
+      type: 'items',
+      note: 'Sundays Only · 9AM–1PM',
+      items: [
+        { id: 'br1', name: 'Chilaquiles', price: '15', description: 'Fried tortillas simmered in red salsa. Topped with onion, cilantro, cheese and 3 fried eggs' },
+        { id: 'br2', name: 'Omelette', price: '17', description: 'Sausage, bacon, onions, bell peppers, cheese, and hash browns' },
+        { id: 'br3', name: 'Breakfast Burrito', price: '13', description: 'Scrambled eggs w/cheese, onion, bacon, sausage, and hash browns' },
+        { id: 'br4', name: 'Breakfast Sandwich', price: '14', description: 'Served with scrambled eggs, cheese, smoked ham, sausage, and hash browns' },
+        { id: 'br5', name: 'Belgian Waffles', price: '15', description: 'Three eggs any way you choose, sausage links, bacon, and maple syrup' },
+        { id: 'br6', name: 'Classic Breakfast', price: '16', description: 'Scrambled egg w/cheese, sausage, bacon, and hash browns' }
+      ]
+    },
+    {
+      id: 'cocktails',
+      title: 'Cocktails',
+      type: 'grid',
+      note: null,
+      items: [
+        { id: 'c1', name: 'Raspberry Mule', price: '', description: 'Absolut vodka, Chambord, fresh lime, ginger beer' },
+        { id: 'c2', name: 'Creamsicle', price: '', description: 'Captain Morgan Spiced Rum, Absolut Vanilla, fresh orange juice' },
+        { id: 'c3', name: 'Peach Palmer', price: '', description: 'Crown Royal, Dekuyper Peach Schnapps, lemonade, iced tea' },
+        { id: 'c4', name: 'Birds and the Bees', price: '', description: 'Jack Daniels Honey, lemonade, ginger beer' },
+        { id: 'c5', name: 'Pirate Booty', price: '', description: 'Malibu coconut rum, Dekuyper Peach Schnapps, pineapple juice' },
+        { id: 'c6', name: 'Watermelon Lime-a-rita', price: '', description: 'Hornitos Reposado, sour mix, topped with Dekuyper Watermelon Pucker' },
+        { id: 'c7', name: 'Allstar Rum Punch', price: '', description: 'Bacardi rum, amaretto, orange juice, pineapple, muddled limes, grenadine' },
+        { id: 'c8', name: 'Sports Bar Sipper', price: '', description: 'Absolut Mango, Dekuyper Raspberry, muddled lemon, sprite, lemonade' }
+      ]
+    },
+    {
+      id: 'draft-beer',
+      title: 'Draft Beer',
+      type: 'tags',
+      note: null,
+      items: [
+        { id: 'db1', name: 'Blue Moon', price: '', description: '' },
+        { id: 'db2', name: 'Bodhi Zafa', price: '', description: '' },
+        { id: 'db3', name: 'Bud Light', price: '', description: '' },
+        { id: 'db4', name: 'Coors Light', price: '', description: '' },
+        { id: 'db5', name: 'Elysian Space Dust', price: '', description: '' },
+        { id: 'db6', name: 'Guinness', price: '', description: '' },
+        { id: 'db7', name: 'Lucille IPA', price: '', description: '' },
+        { id: 'db8', name: 'Mac & Jacks African Amber', price: '', description: '' },
+        { id: 'db9', name: 'Manny\'s Pale Ale', price: '', description: '' },
+        { id: 'db10', name: 'Modelo Especial', price: '', description: '' },
+        { id: 'db11', name: 'Pacifico', price: '', description: '' },
+        { id: 'db12', name: 'Rainier', price: '', description: '' },
+        { id: 'db13', name: 'Schilling Cider', price: '', description: '' },
+        { id: 'db14', name: 'Sierra Nevada Hazy Little Thing', price: '', description: '' },
+        { id: 'db15', name: 'Stella Artois', price: '', description: '' },
+        { id: 'db16', name: 'Widmer Hefeweizen', price: '', description: '' }
+      ]
+    },
+    {
+      id: 'bottles-cans',
+      title: 'Bottles and Cans',
+      type: 'tags',
+      note: null,
+      items: [
+        { id: 'bc1', name: 'Bedford\'s Ginger Beer', price: '', description: '' },
+        { id: 'bc2', name: 'Budweiser', price: '', description: '' },
+        { id: 'bc3', name: 'Bud Light', price: '', description: '' },
+        { id: 'bc4', name: 'Bud Zero', price: '', description: '' },
+        { id: 'bc5', name: 'Coors Light', price: '', description: '' },
+        { id: 'bc6', name: 'Corona', price: '', description: '' },
+        { id: 'bc7', name: 'Corona Premier', price: '', description: '' },
+        { id: 'bc8', name: 'Dos Equis Amber', price: '', description: '' },
+        { id: 'bc9', name: 'Dos Equis Lager', price: '', description: '' },
+        { id: 'bc10', name: 'Heineken', price: '', description: '' },
+        { id: 'bc11', name: 'Heineken Zero', price: '', description: '' },
+        { id: 'bc12', name: 'High Noon Vodka', price: '', description: '' },
+        { id: 'bc13', name: 'Michelob Ultra', price: '', description: '' },
+        { id: 'bc14', name: 'Miller High Life', price: '', description: '' },
+        { id: 'bc15', name: 'Miller Genuine', price: '', description: '' },
+        { id: 'bc16', name: 'Miller Lite', price: '', description: '' },
+        { id: 'bc17', name: 'Modelo Especial', price: '', description: '' },
+        { id: 'bc18', name: 'Modelo Negra', price: '', description: '' },
+        { id: 'bc19', name: 'Pacifico', price: '', description: '' },
+        { id: 'bc20', name: 'PBR', price: '', description: '' },
+        { id: 'bc21', name: 'Rainier', price: '', description: '' },
+        { id: 'bc22', name: 'Rolling Rock', price: '', description: '' },
+        { id: 'bc23', name: 'Stella Cidre', price: '', description: '' },
+        { id: 'bc24', name: 'Stella Artois', price: '', description: '' },
+        { id: 'bc25', name: 'White Claw', price: '', description: '' }
+      ]
+    }
+  ]
+};
+
+function getConnectionString() {
+  const cs = process.env.AZURE_TABLE_STORAGE_CONNECTION_STRING;
+  if (!cs) throw new Error('Missing AZURE_TABLE_STORAGE_CONNECTION_STRING');
+  return cs;
+}
+
+async function getContainer() {
+  const client = BlobServiceClient.fromConnectionString(getConnectionString());
+  const container = client.getContainerClient(CONTAINER_NAME);
+  await container.createIfNotExists();
+  return container;
+}
+
+module.exports = async function (context, req) {
+  const cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  };
+
+  if (req.method === 'OPTIONS') {
+    context.res = { status: 204, headers: cors };
+    return;
+  }
+
+  try {
+    const container = await getContainer();
+    const blobClient = container.getBlockBlobClient(BLOB_NAME);
+
+    if (req.method === 'GET') {
+      const exists = await blobClient.exists();
+      if (!exists) {
+        context.res = {
+          status: 200,
+          headers: { ...cors, 'Content-Type': 'application/json' },
+          body: JSON.stringify(DEFAULT_MENU)
+        };
+        return;
+      }
+      const download = await blobClient.downloadToBuffer();
+      const menu = JSON.parse(download.toString('utf8'));
+      context.res = {
+        status: 200,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+        body: JSON.stringify(menu)
+      };
+      return;
+    }
+
+    if (req.method === 'PUT') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = null; }
+      }
+      if (!body || !Array.isArray(body.sections)) {
+        context.res = { status: 400, headers: cors, body: JSON.stringify({ error: 'Invalid menu data' }) };
+        return;
+      }
+      const json = JSON.stringify(body);
+      const buf = Buffer.from(json, 'utf8');
+      await blobClient.uploadData(buf, {
+        blobHTTPHeaders: { blobContentType: 'application/json' },
+        overwrite: true
+      });
+      context.res = { status: 200, headers: cors, body: JSON.stringify({ ok: true }) };
+      return;
+    }
+
+    context.res = { status: 405, headers: cors, body: 'Method not allowed' };
+  } catch (err) {
+    context.log.error('menu function error:', err);
+    context.res = { status: 500, headers: cors, body: JSON.stringify({ error: err.message }) };
+  }
+};

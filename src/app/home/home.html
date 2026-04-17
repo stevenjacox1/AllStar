@@ -42,20 +42,80 @@
     aria-label="Full Menu"
   >
     <div
-      class="relative w-full max-w-4xl rounded-2xl bg-[#1a1a1a] shadow-2xl"
+      class="relative w-full max-w-4xl rounded-2xl bg-gray-950 shadow-2xl"
       (click)="$event.stopPropagation()"
     >
       <button
         type="button"
         (click)="closeMenu()"
-        class="absolute right-4 top-4 z-10 rounded-full bg-gray-800 px-3 py-1 text-lg text-white hover:bg-red-700 transition"
+        class="sticky top-4 float-right mr-4 mt-4 z-10 rounded-full bg-gray-800 px-3 py-1 text-lg text-white hover:bg-red-700 transition"
         aria-label="Close menu"
       >✕</button>
-      <iframe
-        src="/menu.html"
-        title="All-Star Sports Bar Menu"
-        class="h-[85vh] w-full rounded-2xl border-0"
-      ></iframe>
+
+      <!-- Menu content -->
+      <div class="px-6 pb-10 pt-6 text-gray-200 overflow-y-auto max-h-[85vh]">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+          <h1 class="text-4xl font-black uppercase tracking-widest text-yellow-400">All-Star Sports Bar</h1>
+          <p class="mt-1 text-sm text-gray-400">22303 Marine View Dr. S., Des Moines, WA 98198 &bull; (206) 212-6740</p>
+        </div>
+
+        @if (!menuData()) {
+          <p class="py-16 text-center text-gray-500">Loading menu…</p>
+        } @else {
+          @for (section of menuData()!.sections; track section.id) {
+            <section class="mt-8">
+              <h2 class="mb-3 border-b-2 border-red-600 pb-2 text-xl font-black uppercase tracking-wide text-red-500">{{ section.title }}</h2>
+              @if (section.note) {
+                <p class="mb-3 text-sm italic text-yellow-400">{{ section.note }}</p>
+              }
+
+              @if (section.type === 'tags') {
+                <div class="flex flex-wrap gap-2">
+                  @for (item of section.items; track item.id) {
+                    <span class="rounded-full border border-gray-600 bg-gray-800 px-3 py-1 text-sm text-gray-200">{{ item.name }}</span>
+                  }
+                </div>
+              } @else if (section.type === 'grid') {
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  @for (item of section.items; track item.id) {
+                    <div class="rounded-lg border border-gray-700 bg-gray-900/60 p-3">
+                      <p class="font-bold text-white">
+                        <span class="mr-1 text-red-500">&#9733;</span>{{ item.name }}
+                        @if (item.price) { <span class="text-yellow-400">${{ item.price }}</span> }
+                      </p>
+                      @if (item.description) {
+                        <p class="mt-1 text-sm text-gray-400">{{ item.description }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="space-y-4">
+                  @for (item of section.items; track item.id) {
+                    <div>
+                      <div class="flex items-baseline justify-between">
+                        <span class="font-bold text-white"><span class="mr-1 text-red-500">&#9733;</span>{{ item.name }}</span>
+                        @if (item.price) {
+                          <span class="ml-4 whitespace-nowrap font-bold text-yellow-400">${{ item.price }}</span>
+                        }
+                      </div>
+                      @if (item.description) {
+                        <p class="mt-1 text-sm text-gray-400">{{ item.description }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </section>
+          }
+        }
+
+        <footer class="mt-10 border-t border-gray-800 pt-4 text-center text-xs text-gray-500">
+          <p>* Consuming raw or undercooked meats, poultry, seafood, shellfish, or eggs may increase your risk of foodborne illness.</p>
+          <p class="mt-1">Drink Responsibly &bull; www.allstardesmoines.com</p>
+        </footer>
+      </div>
     </div>
   </div>
 }

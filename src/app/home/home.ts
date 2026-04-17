@@ -16,6 +16,25 @@ interface VibeSlide {
   imageUrl: string;
 }
 
+export interface MenuItem {
+  id: string;
+  name: string;
+  price: string;
+  description: string;
+}
+
+export interface MenuSection {
+  id: string;
+  title: string;
+  type: 'items' | 'grid' | 'tags';
+  note: string | null;
+  items: MenuItem[];
+}
+
+export interface MenuData {
+  sections: MenuSection[];
+}
+
 const SLIDESHOW_PREFIX = 'slideshow:';
 const SLIDE_ROTATION_MS = 5000;
 
@@ -35,9 +54,14 @@ export class HomeComponent {
 
   protected readonly menuOpen = signal(false);
   protected readonly mobileNavOpen = signal(false);
+  protected readonly menuData = signal<MenuData | null>(null);
+
   protected openMenu(): void {
     this.menuOpen.set(true);
     this.mobileNavOpen.set(false);
+    if (!this.menuData()) {
+      this.loadMenuData();
+    }
   }
 
   protected closeMenu(): void {
@@ -123,5 +147,12 @@ export class HomeComponent {
       clearInterval(this.rotationTimer);
       this.rotationTimer = null;
     }
+  }
+
+  private loadMenuData(): void {
+    this.http.get<MenuData>('/api/menu').subscribe({
+      next: data => this.menuData.set(data),
+      error: () => { /* keep null, template shows fallback */ }
+    });
   }
 }
