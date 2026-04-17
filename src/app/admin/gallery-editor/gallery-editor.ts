@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { timeout } from 'rxjs';
 
 interface GalleryItem {
   key: string;
@@ -31,6 +32,7 @@ const DEFAULT_DAY_CAPTIONS: Record<string, string> = {
 };
 
 const DEFAULT_SECTION_HTML = '<p>Special details are unavailable right now.</p>';
+const IMAGE_UPLOAD_TIMEOUT_MS = 20000;
 
 function normalizeHtml(html: string): string {
   return html.replace(/font-color\s*:/gi, 'color:');
@@ -399,6 +401,7 @@ export class GalleryEditorComponent {
           sectionKey: key,
           imageDataUrl
         })
+        .pipe(timeout(IMAGE_UPLOAD_TIMEOUT_MS))
         .subscribe({
           next: (result) => {
             this.uploadingImageKey.set(null);
@@ -415,7 +418,7 @@ export class GalleryEditorComponent {
           },
           error: (err) => {
             console.error('Error uploading gallery image:', err);
-            this.error.set('Failed to upload image');
+            this.error.set('Image upload failed or timed out.');
             this.uploadingImageKey.set(null);
             input.value = '';
           }

@@ -3,8 +3,11 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
+import { timeout } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { EventsService, BarEvent } from '../../services/events.service';
+
+const IMAGE_UPLOAD_TIMEOUT_MS = 20000;
 
 @Component({
   selector: 'app-admin-events',
@@ -113,6 +116,7 @@ export class AdminEventsComponent {
 
       this.http
         .post<{ imageUrl: string }>('/api/gallery-image', { sectionKey, imageDataUrl })
+        .pipe(timeout(IMAGE_UPLOAD_TIMEOUT_MS))
         .subscribe({
           next: result => {
             this.formImageUrl = result.imageUrl || '';
@@ -121,7 +125,7 @@ export class AdminEventsComponent {
           },
           error: error => {
             console.error('Failed to upload event image', error);
-            this.uploadError = 'Failed to upload image.';
+            this.uploadError = 'Image upload failed or timed out.';
             this.isUploadingImage = false;
             input.value = '';
           }
