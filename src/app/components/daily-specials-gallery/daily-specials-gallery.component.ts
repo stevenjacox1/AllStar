@@ -45,6 +45,7 @@ interface ExtraSpecial {
   detailsHtml: SafeHtml;
 }
 
+const SLIDESHOW_PREFIX = 'slideshow:';
 const GALLERY_IMAGE_VERSION = '20260416';
 
 function normalizeHtml(html: string): string {
@@ -173,6 +174,7 @@ export class DailySpecialsGalleryComponent {
   protected readonly extraSpecials = computed<ExtraSpecial[]>(() =>
     this.galleryContent()
       .filter(item => !item.isDaySection)
+      .filter(item => !item.key.startsWith(SLIDESHOW_PREFIX))
       .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
       .map(item => ({
         key: item.key,

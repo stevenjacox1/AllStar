@@ -16,6 +16,7 @@ interface VibeSlide {
   imageUrl: string;
 }
 
+const SLIDESHOW_PREFIX = 'slideshow:';
 const SLIDE_ROTATION_MS = 5000;
 
 @Component({
@@ -61,6 +62,7 @@ export class HomeComponent {
     this.http.get<GalleryItem[]>('/api/gallery').subscribe({
       next: (items) => {
         const slides = (items ?? [])
+          .filter(item => item.key.startsWith(SLIDESHOW_PREFIX))
           .filter(item => typeof item.imageUrl === 'string' && item.imageUrl.trim().length > 0)
           .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
           .map(item => ({

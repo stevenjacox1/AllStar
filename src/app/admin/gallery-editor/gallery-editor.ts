@@ -33,6 +33,7 @@ const DEFAULT_DAY_CAPTIONS: Record<string, string> = {
 
 const DEFAULT_SECTION_HTML = '<p>Special details are unavailable right now.</p>';
 const IMAGE_UPLOAD_TIMEOUT_MS = 20000;
+const SLIDESHOW_PREFIX = 'slideshow:';
 
 function normalizeHtml(html: string): string {
   return html.replace(/font-color\s*:/gi, 'color:');
@@ -68,6 +69,7 @@ export class GalleryEditorComponent {
   protected readonly extraSections = computed(() =>
     this.allItems()
       .filter(item => !item.isDaySection)
+      .filter(item => !item.key.startsWith(SLIDESHOW_PREFIX))
       .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
   );
 

@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { GalleryEditorComponent } from '../gallery-editor/gallery-editor';
+import { SlideshowManagerComponent } from '../slideshow-manager/slideshow-manager';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-admin-gallery',
-  imports: [RouterLink, GalleryEditorComponent],
+  imports: [RouterLink, GalleryEditorComponent, SlideshowManagerComponent],
   templateUrl: './admin-gallery.html',
   styleUrl: './admin-gallery.css',
   changeDetection: ChangeDetectionStrategy.OnPush

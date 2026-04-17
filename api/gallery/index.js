@@ -4,6 +4,7 @@ const TABLE_NAME = 'gallery';
 const PARTITION_KEY = 'gallery';
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const EXTRA_PREFIX = 'extra:';
+const SLIDESHOW_PREFIX = 'slideshow:';
 const DEFAULT_CAPTIONS = {
   monday: 'Miller Monday',
   tuesday: 'Taco Tuesday',
@@ -50,11 +51,17 @@ function toExtraSlug(value) {
     .replace(/^-|-$/g, '');
 }
 
-function toExtraRowKey(value) {
+function toSectionRowKey(value) {
   const trimmed = String(value || '').toLowerCase().trim();
 
   if (!trimmed) {
     return '';
+  }
+
+  if (trimmed.startsWith(SLIDESHOW_PREFIX)) {
+    const raw = trimmed.slice(SLIDESHOW_PREFIX.length);
+    const slug = toExtraSlug(raw);
+    return slug ? `${SLIDESHOW_PREFIX}${slug}` : '';
   }
 
   if (trimmed.startsWith(EXTRA_PREFIX)) {
@@ -89,6 +96,7 @@ function toGalleryItem(entity) {
     key,
     day,
     isDaySection,
+    isSlideshow: key.startsWith(SLIDESHOW_PREFIX),
     sortOrder,
     html: normalizeHtml(entity.html || entity.markdown || ''),
     caption: entity.caption || (day ? getDefaultCaption(day) : 'Additional Special'),
@@ -167,7 +175,7 @@ module.exports = async function (context, req) {
         : (typeof payload.markdown === 'string' ? payload.markdown : null);
       const caption = typeof payload.caption === 'string' ? payload.caption.trim() : '';
       const imageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl.trim() : '';
-      const rowKey = toExtraRowKey(payload.key || payload.sectionKey || caption);
+      const rowKey = toSectionRowKey(payload.key || payload.sectionKey || caption);
       const sortOrder = Number.isFinite(Number(payload.sortOrder))
         ? Number(payload.sortOrder)
         : Date.now();
@@ -289,7 +297,7 @@ module.exports = async function (context, req) {
       }
     }
 
-    // DELETE /api/gallery/{day}
+    // DELETE /api/gallery/{dayOrKey}
     if (method === 'DELETE') {
       if (!day) {
         context.res = {
@@ -299,16 +307,23 @@ module.exports = async function (context, req) {
         };
         return;
       }
-      if (!isValidDay(day)) {
+
+      const normalizedParam = String(day).toLowerCase();
+      const rowKey = isValidDay(normalizedParam)
+        ? normalizedParam
+        : toSectionRowKey(normalizedParam);
+
+      if (!rowKey) {
         context.res = {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-          body: { error: `Invalid day. Must be one of: ${DAYS.join(', ')}` }
+          body: { error: 'Invalid section key for DELETE request' }
         };
         return;
       }
+
       try {
-        await client.deleteEntity(PARTITION_KEY, day.toLowerCase());
+        await client.deleteEntity(PARTITION_KEY, rowKey);
         context.res = {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -320,7 +335,7 @@ module.exports = async function (context, req) {
           context.res = {
             status: 404,
             headers: { 'Content-Type': 'application/json' },
-            body: { error: `Gallery item for ${day} not found` }
+            body: { error: `Gallery item for ${normalizedParam} not found` }
           };
         } else {
           context.res = {
