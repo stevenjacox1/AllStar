@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { EventsService, BarEvent } from '../../services/events.service';
@@ -14,6 +15,7 @@ import { EventsService, BarEvent } from '../../services/events.service';
 export class AdminEventsComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
   protected readonly eventsService = inject(EventsService);
 
   protected readonly showForm = signal(false);
@@ -23,6 +25,9 @@ export class AdminEventsComponent {
   protected formDate = '';
   protected formTime = '';
   protected formDescription = '';
+  protected formImageUrl = '';
+  protected isUploadingImage = false;
+  protected uploadError = '';
 
   openAddForm(): void {
     this.editingId.set(null);
@@ -36,6 +41,7 @@ export class AdminEventsComponent {
     this.formDate = event.date;
     this.formTime = event.time;
     this.formDescription = event.description;
+    this.formImageUrl = event.imageUrl;
     this.showForm.set(true);
   }
 
@@ -45,7 +51,8 @@ export class AdminEventsComponent {
       title: this.formTitle.trim(),
       date: this.formDate,
       time: this.formTime.trim(),
-      description: this.formDescription.trim()
+      description: this.formDescription.trim(),
+      imageUrl: this.formImageUrl.trim()
     };
     const id = this.editingId();
     if (id) {
@@ -72,6 +79,64 @@ export class AdminEventsComponent {
     this.router.navigate(['/admin']);
   }
 
+  protected clearImage(): void {
+    this.formImageUrl = '';
+  }
+
+  protected uploadEventImage(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.uploadError = 'Only image files are allowed.';
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.uploadError = 'Image must be 5MB or smaller.';
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingImage = true;
+    this.uploadError = '';
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const imageDataUrl = typeof reader.result === 'string' ? reader.result : '';
+      const sectionKey = this.editingId() || `event-${Date.now()}`;
+
+      this.http
+        .post<{ imageUrl: string }>('/api/gallery-image', { sectionKey, imageDataUrl })
+        .subscribe({
+          next: result => {
+            this.formImageUrl = result.imageUrl || '';
+            this.isUploadingImage = false;
+            input.value = '';
+          },
+          error: error => {
+            console.error('Failed to upload event image', error);
+            this.uploadError = 'Failed to upload image.';
+            this.isUploadingImage = false;
+            input.value = '';
+          }
+        });
+    };
+
+    reader.onerror = () => {
+      this.uploadError = 'Failed to read selected image file.';
+      this.isUploadingImage = false;
+      input.value = '';
+    };
+
+    reader.readAsDataURL(file);
+  }
+
   protected isOlderThanOneDay(date: string): boolean {
     return this.eventsService.isOlderThanOneDay(date);
   }
@@ -81,5 +146,8 @@ export class AdminEventsComponent {
     this.formDate = '';
     this.formTime = '';
     this.formDescription = '';
+    this.formImageUrl = '';
+    this.isUploadingImage = false;
+    this.uploadError = '';
   }
 }

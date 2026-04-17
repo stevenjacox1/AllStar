@@ -17,7 +17,8 @@ function toEvent(entity) {
     title: entity.title || '',
     date: entity.date || '',
     time: entity.time || '',
-    description: entity.description || ''
+    description: entity.description || '',
+    imageUrl: entity.imageUrl || ''
   };
 }
 
@@ -41,6 +42,7 @@ function validateEventPayload(payload) {
   if (!payload.date || typeof payload.date !== 'string') return 'date is required (YYYY-MM-DD).';
   if (payload.time != null && typeof payload.time !== 'string') return 'time must be a string.';
   if (payload.description != null && typeof payload.description !== 'string') return 'description must be a string.';
+  if (payload.imageUrl != null && typeof payload.imageUrl !== 'string') return 'imageUrl must be a string.';
   return null;
 }
 
@@ -87,6 +89,7 @@ module.exports = async function (context, req) {
         date: payload.date,
         time: (payload.time || '').trim(),
         description: (payload.description || '').trim(),
+        imageUrl: (payload.imageUrl || '').trim(),
         updatedAt: new Date().toISOString()
       };
 
@@ -120,6 +123,7 @@ module.exports = async function (context, req) {
         date: payload.date,
         time: (payload.time || '').trim(),
         description: (payload.description || '').trim(),
+        imageUrl: (payload.imageUrl || '').trim(),
         updatedAt: new Date().toISOString()
       };
 

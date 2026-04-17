@@ -7,6 +7,7 @@ export interface BarEvent {
   date: string; // YYYY-MM-DD
   time: string;
   description: string;
+  imageUrl: string;
 }
 
 type EventPayload = Omit<BarEvent, 'id'>;

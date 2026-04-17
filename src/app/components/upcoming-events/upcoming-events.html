@@ -7,6 +7,13 @@
     <div class="flex flex-col gap-6">
       @for (event of events(); track event.id) {
         <div class="rounded-xl border border-gray-700 bg-gray-900/80 p-6 flex flex-col md:flex-row md:items-center gap-4">
+          @if (event.imageUrl) {
+            <img
+              [src]="event.imageUrl"
+              [alt]="event.title + ' event image'"
+              class="h-36 w-full rounded-lg border border-gray-700 object-cover md:w-48"
+            />
+          }
           <div class="flex-shrink-0 text-center bg-red-700/30 border border-red-700 rounded-lg px-5 py-3 min-w-[100px]">
             <p class="text-red-400 text-xs uppercase tracking-widest font-semibold">{{ event.date | date:'MMM':'UTC' }}</p>
             <p class="text-white text-4xl font-black leading-none">{{ event.date | date:'d':'UTC' }}</p>

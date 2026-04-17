@@ -52,6 +52,13 @@
                 [class.border-gray-800]="staleEvent"
               >
                 <div>
+                  @if (event.imageUrl) {
+                    <img
+                      [src]="event.imageUrl"
+                      [alt]="event.title + ' event image'"
+                      class="mb-3 h-28 w-full max-w-xs rounded-lg border border-gray-700 object-cover"
+                    />
+                  }
                   <p
                     class="text-xs uppercase tracking-widest font-semibold"
                     [class.text-red-400]="!staleEvent"
@@ -146,6 +153,40 @@
                 class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 resize-none"
                 placeholder="Details about the event..."
               ></textarea>
+            </div>
+
+            <div class="mb-6 rounded-xl border border-gray-700 bg-gray-900/70 p-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Event Image</label>
+              <div class="flex flex-col gap-3 md:flex-row md:items-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="uploadEventImage($event)"
+                  [disabled]="isUploadingImage"
+                  class="block w-full text-sm text-gray-300 file:mr-3 file:rounded file:border-0 file:bg-red-700 file:px-3 file:py-2 file:text-white hover:file:bg-red-600"
+                />
+                <button
+                  type="button"
+                  (click)="clearImage()"
+                  [disabled]="!formImageUrl"
+                  class="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 text-white font-semibold rounded transition"
+                >
+                  Remove Image
+                </button>
+              </div>
+              @if (isUploadingImage) {
+                <p class="mt-2 text-sm text-yellow-300">Uploading image...</p>
+              }
+              @if (uploadError) {
+                <p class="mt-2 text-sm text-red-300">{{ uploadError }}</p>
+              }
+              @if (formImageUrl) {
+                <img
+                  [src]="formImageUrl"
+                  alt="Event image preview"
+                  class="mt-3 max-h-56 w-full rounded border border-gray-700 object-cover"
+                />
+              }
             </div>
 
             <div class="flex gap-3">
