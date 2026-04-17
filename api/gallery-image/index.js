@@ -104,6 +104,13 @@ module.exports = async function (context, req) {
     const parsed = parseDataUri(body.imageDataUrl);
     const connectionString = getConnectionString();
 
+    context.log('gallery-image upload request received', {
+      sectionKey,
+      hasBody: Boolean(req.body),
+      hasImageDataUrl: typeof body.imageDataUrl === 'string',
+      isDevelopmentStorage: connectionString === 'UseDevelopmentStorage=true'
+    });
+
     if (!sectionKey) {
       context.res = {
         status: 400,
@@ -114,6 +121,7 @@ module.exports = async function (context, req) {
     }
 
     if (!parsed) {
+      context.log.warn('gallery-image upload rejected: invalid data URI', { sectionKey });
       context.res = {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -123,6 +131,10 @@ module.exports = async function (context, req) {
     }
 
     if (parsed.buffer.byteLength > MAX_BYTES) {
+      context.log.warn('gallery-image upload rejected: file too large', {
+        sectionKey,
+        byteLength: parsed.buffer.byteLength
+      });
       context.res = {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -135,6 +147,12 @@ module.exports = async function (context, req) {
     const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     const sharedKeyCredential = getSharedKeyCredential(connectionString);
     const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
+    context.log('gallery-image preparing container', {
+      sectionKey,
+      containerName: CONTAINER_NAME,
+      isDevelopmentStorage
+    });
+
     if (isDevelopmentStorage) {
       await containerClient.createIfNotExists({ access: 'blob' });
     } else {
@@ -148,6 +166,13 @@ module.exports = async function (context, req) {
       blobHTTPHeaders: { blobContentType: parsed.mimeType }
     });
 
+    context.log('gallery-image upload completed', {
+      sectionKey,
+      blobName,
+      mimeType: parsed.mimeType,
+      byteLength: parsed.buffer.byteLength
+    });
+
     context.res = {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -159,6 +184,11 @@ module.exports = async function (context, req) {
       }
     };
   } catch (error) {
+    context.log.error('gallery-image upload failed', {
+      message: error?.message || 'Unknown error',
+      code: error?.code,
+      stack: error?.stack
+    });
     context.res = {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
