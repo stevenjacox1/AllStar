@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { DailySpecialsGalleryComponent } from '../components/daily-specials-gallery/daily-specials-gallery.component';
 import { UpcomingEventsComponent } from '../components/upcoming-events/upcoming-events';
 
@@ -23,14 +24,45 @@ const SLIDE_ROTATION_MS = 5000;
   selector: 'app-home',
   standalone: true,
   imports: [DailySpecialsGalleryComponent, UpcomingEventsComponent],
+  host: { '(document:keydown.escape)': 'closeMenu()' },
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent {
   private readonly http = inject(HttpClient);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
+
+  protected readonly menuOpen = signal(false);
+  protected readonly mobileNavOpen = signal(false);
+  protected readonly menuHtml = signal<SafeHtml>('');
+
+  protected openMenu(): void {
+    if (!this.menuHtml()) {
+      this.http.get('/menu.html', { responseType: 'text' }).subscribe({
+        next: html => {
+          const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+          const inner = bodyMatch ? bodyMatch[1] : html;
+          this.menuHtml.set(this.sanitizer.bypassSecurityTrustHtml(inner));
+        },
+        error: () => {
+          this.menuHtml.set(this.sanitizer.bypassSecurityTrustHtml('<p style="color:#ccc;padding:2rem">Menu unavailable. Please call (206) 212-6740.</p>'));
+        }
+      });
+    }
+    this.menuOpen.set(true);
+    this.mobileNavOpen.set(false);
+  }
+
+  protected closeMenu(): void {
+    this.menuOpen.set(false);
+  }
+
+  protected toggleMobileNav(): void {
+    this.mobileNavOpen.update(v => !v);
+  }
 
   protected readonly vibeSlides = signal<VibeSlide[]>([]);
   protected readonly activeVibeSlideIndex = signal(0);

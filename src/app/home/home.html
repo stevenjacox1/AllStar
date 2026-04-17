@@ -7,18 +7,58 @@
 
     <!-- Desktop Nav -->
     <nav class="hidden md:flex items-center space-x-8 text-white font-medium">
-      <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Menu</a>
+      <button type="button" (click)="openMenu()" class="hover:text-yellow-300 transition-colors duration-200 cursor-pointer">Menu</button>
       <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Events</a>
       <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Watch Parties</a>
       <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Contact</a>
     </nav>
 
-    <!-- Mobile menu button -->
-    <button class="md:hidden text-white text-3xl focus:outline-none">
-      ☰
+    <!-- Mobile hamburger button -->
+    <button
+      type="button"
+      class="md:hidden text-white text-3xl focus:outline-none"
+      (click)="toggleMobileNav()"
+      [attr.aria-expanded]="mobileNavOpen()"
+      aria-label="Toggle navigation"
+    >
+      @if (mobileNavOpen()) { ✕ } @else { ☰ }
     </button>
   </div>
+
+  <!-- Mobile Nav Drawer -->
+  @if (mobileNavOpen()) {
+    <nav class="md:hidden bg-red-900 border-t border-red-700 px-6 py-4 flex flex-col gap-4 text-white font-medium text-lg">
+      <button type="button" (click)="openMenu()" class="text-left hover:text-yellow-300 transition-colors">Menu</button>
+      <a href="#" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Events</a>
+      <a href="#" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Watch Parties</a>
+      <a href="#" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Contact</a>
+    </nav>
+  }
 </header>
+
+<!-- Menu Modal -->
+@if (menuOpen()) {
+  <div
+    class="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8"
+    (click)="closeMenu()"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Full Menu"
+  >
+    <div
+      class="relative w-full max-w-4xl rounded-2xl bg-[#1a1a1a] shadow-2xl"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        (click)="closeMenu()"
+        class="absolute right-4 top-4 z-10 rounded-full bg-gray-800 px-3 py-1 text-lg text-white hover:bg-red-700 transition"
+        aria-label="Close menu"
+      >✕</button>
+      <div [innerHTML]="menuHtml()"></div>
+    </div>
+  </div>
+}
 
 <main class="pt-[10vh] min-h-screen w-full overflow-x-hidden bg-gray-950 text-white">
   <!-- Hero / Welcome section -->
