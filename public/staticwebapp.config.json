@@ -1,7 +1,7 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/gallery/*", "/*.ico", "/*.jpg", "/*.png", "/*.svg", "/*.css", "/*.js"]
+    "exclude": ["/gallery/*", "/menu.html", "/*.ico", "/*.jpg", "/*.png", "/*.svg", "/*.css", "/*.js"]
   },
   "globalHeaders": {
     "Access-Control-Allow-Origin": "*",
