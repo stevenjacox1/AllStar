@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { firstValueFrom, timeout } from 'rxjs';
 
 interface GalleryItem {
@@ -19,7 +20,7 @@ const IMAGE_UPLOAD_TIMEOUT_MS = 20000;
 
 @Component({
   selector: 'app-slideshow-manager',
-  imports: [],
+  imports: [FormsModule],
   templateUrl: './slideshow-manager.html',
   styleUrl: './slideshow-manager.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -30,10 +31,12 @@ export class SlideshowManagerComponent {
   protected readonly loading = signal(false);
   protected readonly uploading = signal(false);
   protected readonly savingOrder = signal(false);
+  protected readonly savingCaptionKey = signal<string | null>(null);
   protected readonly seedingDemoSlides = signal(false);
   protected readonly error = signal('');
   protected readonly success = signal('');
   protected readonly draggingKey = signal<string | null>(null);
+  protected readonly captionDraftByKey = signal<Record<string, string>>({});
 
   private readonly allItems = signal<GalleryItem[]>([]);
 
@@ -172,6 +175,57 @@ export class SlideshowManagerComponent {
     }
   }
 
+  protected captionDraft(key: string): string {
+    return this.captionDraftByKey()[key] ?? '';
+  }
+
+  protected updateCaptionDraft(key: string, value: string): void {
+    this.captionDraftByKey.update(drafts => ({
+      ...drafts,
+      [key]: value
+    }));
+  }
+
+  protected async saveCaption(key: string): Promise<void> {
+    const slide = this.slideshowItems().find(item => item.key === key);
+    if (!slide) {
+      return;
+    }
+
+    const nextCaption = this.captionDraft(key).trim();
+    if (!nextCaption) {
+      this.error.set('Caption cannot be empty.');
+      return;
+    }
+
+    this.error.set('');
+    this.success.set('');
+    this.savingCaptionKey.set(key);
+
+    try {
+      await firstValueFrom(
+        this.http.post<GalleryItem>('/api/gallery', {
+          key: slide.key,
+          html: slide.html?.trim() || DEFAULT_SLIDE_HTML,
+          caption: nextCaption,
+          imageUrl: slide.imageUrl?.trim() || '',
+          sortOrder: Number.isFinite(Number(slide.sortOrder)) ? Number(slide.sortOrder) : 10000
+        })
+      );
+
+      this.allItems.update(items =>
+        items.map(item => (item.key === key ? { ...item, caption: nextCaption } : item))
+      );
+
+      this.success.set('Caption saved.');
+    } catch (error) {
+      console.error('Failed to save slideshow caption', error);
+      this.error.set('Failed to save slideshow caption.');
+    } finally {
+      this.savingCaptionKey.set(null);
+    }
+  }
+
   protected async addDemoSlides(): Promise<void> {
     this.seedingDemoSlides.set(true);
     this.error.set('');
@@ -265,10 +319,19 @@ export class SlideshowManagerComponent {
     try {
       const items = await firstValueFrom(this.http.get<GalleryItem[]>('/api/gallery'));
       this.allItems.set(items ?? []);
+      this.captionDraftByKey.set(
+        (items ?? [])
+          .filter(item => item.key.startsWith(SLIDESHOW_PREFIX))
+          .reduce<Record<string, string>>((drafts, item) => {
+            drafts[item.key] = item.caption || '';
+            return drafts;
+          }, {})
+      );
     } catch (error) {
       console.error('Failed to load slideshow items', error);
       this.error.set('Failed to load slideshow items.');
       this.allItems.set([]);
+      this.captionDraftByKey.set({});
     } finally {
       this.loading.set(false);
     }
