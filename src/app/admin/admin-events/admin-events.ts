@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -19,6 +19,7 @@ export class AdminEventsComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected readonly eventsService = inject(EventsService);
 
   protected readonly showForm = signal(false);
@@ -84,6 +85,7 @@ export class AdminEventsComponent {
 
   protected clearImage(): void {
     this.formImageUrl = '';
+    this.cdr.markForCheck();
   }
 
   protected uploadEventImage(event: Event): void {
@@ -122,12 +124,14 @@ export class AdminEventsComponent {
             this.formImageUrl = result.imageUrl || '';
             this.isUploadingImage = false;
             input.value = '';
+            this.cdr.markForCheck();
           },
           error: error => {
             console.error('Failed to upload event image', error);
             this.uploadError = 'Image upload failed or timed out.';
             this.isUploadingImage = false;
             input.value = '';
+            this.cdr.markForCheck();
           }
         });
     };
@@ -136,6 +140,7 @@ export class AdminEventsComponent {
       this.uploadError = 'Failed to read selected image file.';
       this.isUploadingImage = false;
       input.value = '';
+      this.cdr.markForCheck();
     };
 
     reader.readAsDataURL(file);
