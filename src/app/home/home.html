@@ -8,9 +8,7 @@
     <!-- Desktop Nav -->
     <nav class="hidden md:flex items-center space-x-8 text-white font-medium">
       <button type="button" (click)="openMenu()" class="hover:text-yellow-300 transition-colors duration-200 cursor-pointer">Menu</button>
-      <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Events</a>
-      <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Watch Parties</a>
-      <a href="#" class="hover:text-yellow-300 transition-colors duration-200">Contact</a>
+      <a href="#upcoming-events" class="hover:text-yellow-300 transition-colors duration-200">Events</a>
     </nav>
 
     <!-- Mobile hamburger button -->
@@ -29,9 +27,7 @@
   @if (mobileNavOpen()) {
     <nav class="md:hidden bg-red-900 border-t border-red-700 px-6 py-4 flex flex-col gap-4 text-white font-medium text-lg">
       <button type="button" (click)="openMenu()" class="text-left hover:text-yellow-300 transition-colors">Menu</button>
-      <a href="#" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Events</a>
-      <a href="#" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Watch Parties</a>
-      <a href="#" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Contact</a>
+      <a href="#upcoming-events" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Events</a>
     </nav>
   }
 </header>
@@ -83,7 +79,7 @@
   </section>
 
   <!-- Upcoming Events -->
-  <section class="py-16 md:py-24 px-6 bg-gray-950 overflow-x-hidden">
+  <section id="upcoming-events" class="py-16 md:py-24 px-6 bg-gray-950 overflow-x-hidden">
     <app-upcoming-events></app-upcoming-events>
   </section>
 
