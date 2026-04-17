@@ -48,5 +48,49 @@
     <p class="text-lg md:text-xl text-gray-400">
       Come for the game, stay for the vibe.
     </p>
+
+    @if (vibeSlides().length > 0) {
+      <div class="mx-auto mt-8 w-full max-w-5xl">
+        <div class="relative h-64 overflow-hidden rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl md:h-96">
+          @for (slide of vibeSlides(); track slide.key) {
+            <div
+              class="absolute inset-0 bg-cover bg-top transition-opacity duration-700"
+              [style.background-image]="'url(' + slide.imageUrl + ')'"
+              [class.opacity-100]="$index === activeVibeSlideIndex()"
+              [class.opacity-0]="$index !== activeVibeSlideIndex()"
+              role="img"
+              [attr.aria-label]="slide.title + ' photo'"
+            ></div>
+          }
+
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10"></div>
+
+          <div class="absolute bottom-0 left-0 right-0 p-5 text-left md:p-7">
+            <p class="text-xs uppercase tracking-[0.24em] text-red-300">Photo Gallery</p>
+            <h4 class="mt-2 text-2xl font-black text-white md:text-3xl">{{ activeVibeSlide()?.title || 'All-Star Vibe' }}</h4>
+          </div>
+        </div>
+
+        @if (vibeSlides().length > 1) {
+          <div class="mt-4 flex justify-center gap-2" aria-label="Choose gallery slide">
+            @for (slide of vibeSlides(); track slide.key) {
+              <button
+                type="button"
+                class="h-2.5 w-8 rounded-full transition"
+                [class.bg-red-500]="$index === activeVibeSlideIndex()"
+                [class.bg-gray-600]="$index !== activeVibeSlideIndex()"
+                [attr.aria-label]="'Show slide ' + ($index + 1)"
+                [attr.aria-pressed]="$index === activeVibeSlideIndex()"
+                (click)="setActiveSlide($index)"
+              ></button>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="mx-auto mt-6 max-w-2xl text-sm text-gray-500">
+        Upload photos in Admin Gallery and they will appear here automatically.
+      </p>
+    }
   </section>
 </main>
