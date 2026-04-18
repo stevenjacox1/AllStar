@@ -18,10 +18,20 @@ function readLocalSettings() {
 
   const raw = fs.readFileSync(localSettingsPath, 'utf8');
   const parsed = JSON.parse(raw);
-  const sourceConnectionString = parsed?.Values?.AZURE_TABLE_STORAGE_CONNECTION_STRING;
+  const sourceConnectionString =
+    process.env.AZURE_SOURCE_STORAGE_CONNECTION_STRING ||
+    parsed?.Values?.AZURE_SOURCE_STORAGE_CONNECTION_STRING ||
+    parsed?.Values?.AZURE_TABLE_STORAGE_CONNECTION_STRING;
 
   if (!sourceConnectionString || sourceConnectionString.includes('<your-azure-storage-connection-string>')) {
-    throw new Error('AZURE_TABLE_STORAGE_CONNECTION_STRING is missing or placeholder in api/local.settings.json');
+    throw new Error('Set a real Azure source connection string in AZURE_SOURCE_STORAGE_CONNECTION_STRING.');
+  }
+
+  if (sourceConnectionString === AZURITE_CONNECTION_STRING) {
+    throw new Error(
+      'Azure source connection string is currently set to UseDevelopmentStorage=true. ' +
+      'Set AZURE_SOURCE_STORAGE_CONNECTION_STRING to your real Azure Storage connection string before running sync:azurite.'
+    );
   }
 
   return sourceConnectionString;
