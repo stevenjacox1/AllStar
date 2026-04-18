@@ -146,8 +146,8 @@ export class AdminEventsComponent {
     reader.readAsDataURL(file);
   }
 
-  protected isOlderThanOneDay(date: string): boolean {
-    return this.eventsService.isOlderThanOneDay(date);
+  protected isPastEvent(date: string): boolean {
+    return this.eventsService.isPastEvent(date);
   }
 
   private resetForm(): void {

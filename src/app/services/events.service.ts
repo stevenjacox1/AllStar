@@ -93,17 +93,21 @@ export class EventsService {
     });
   }
 
-  // Use Pacific midnight boundaries so stale state flips at local PST/PDT midnight.
-  isOlderThanOneDay(date: string, now: Date = new Date()): boolean {
+  // Treat any event before today's Pacific date as past.
+  isPastEvent(date: string, now: Date = new Date()): boolean {
     const eventMidnightUtcMs = this.parseEventDate(date);
     if (eventMidnightUtcMs === null) {
       return false;
     }
 
     const todayPacificMidnightUtcMs = this.getPacificMidnightUtcMs(now);
-    const oldestAllowedUtcMs = todayPacificMidnightUtcMs - 24 * 60 * 60 * 1000;
 
-    return eventMidnightUtcMs < oldestAllowedUtcMs;
+    return eventMidnightUtcMs < todayPacificMidnightUtcMs;
+  }
+
+  // Backward-compatible alias for older stale-event callers.
+  isOlderThanOneDay(date: string, now: Date = new Date()): boolean {
+    return this.isPastEvent(date, now);
   }
 
   private parseEventDate(date: string): number | null {

@@ -14,6 +14,6 @@ export class UpcomingEventsComponent {
   protected readonly events = computed(() =>
     this.eventsService
       .events()
-      .filter(event => !this.eventsService.isOlderThanOneDay(event.date))
+      .filter(event => !this.eventsService.isPastEvent(event.date))
   );
 }
