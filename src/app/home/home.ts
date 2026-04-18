@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signa
 import { HttpClient } from '@angular/common/http';
 import { DailySpecialsGalleryComponent } from '../components/daily-specials-gallery/daily-specials-gallery.component';
 import { UpcomingEventsComponent } from '../components/upcoming-events/upcoming-events';
+import { SiteContentService } from '../services/site-content.service';
 
 interface GalleryItem {
   key: string;
@@ -50,7 +51,10 @@ const SLIDE_ROTATION_MS = 5000;
 export class HomeComponent {
   private readonly http = inject(HttpClient);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly siteContent = inject(SiteContentService);
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
+
+  protected readonly heroText = this.siteContent.heroText;
 
   protected readonly menuOpen = signal(false);
   protected readonly findUsModalOpen = signal(false);
@@ -102,6 +106,7 @@ export class HomeComponent {
   });
 
   constructor() {
+    this.siteContent.loadHeroText();
     this.loadVibeSlides();
     this.destroyRef.onDestroy(() => this.stopRotation());
   }

@@ -33,6 +33,10 @@ import { AdminMenuComponent } from './admin-menu';
         class="px-6 py-4 font-semibold border-b-2 border-red-600 text-white transition hover:text-white">
         Menu
       </a>
+      <a routerLink="/admin/site-content"
+        class="px-6 py-4 font-semibold border-b-2 border-gray-700 text-gray-400 transition hover:text-white">
+        Site Content
+      </a>
     </nav>
   </div>
 
