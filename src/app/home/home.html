@@ -9,7 +9,7 @@
     <nav class="hidden md:flex items-center space-x-8 text-white font-medium">
       <button type="button" (click)="openMenu()" class="hover:text-yellow-300 transition-colors duration-200 cursor-pointer">Menu</button>
       <a href="#upcoming-events" class="hover:text-yellow-300 transition-colors duration-200">Events</a>
-      <a href="#find-us" class="hover:text-yellow-300 transition-colors duration-200">Find Us</a>
+      <button type="button" (click)="openFindUsModal()" class="hover:text-yellow-300 transition-colors duration-200 cursor-pointer">Find Us</button>
     </nav>
 
     <!-- Mobile hamburger button -->
@@ -29,7 +29,7 @@
     <nav class="md:hidden bg-red-900 border-t border-red-700 px-6 py-4 flex flex-col gap-4 text-white font-medium text-lg">
       <button type="button" (click)="openMenu()" class="text-left hover:text-yellow-300 transition-colors">Menu</button>
       <a href="#upcoming-events" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Events</a>
-      <a href="#find-us" class="hover:text-yellow-300 transition-colors" (click)="toggleMobileNav()">Find Us</a>
+      <button type="button" class="text-left hover:text-yellow-300 transition-colors" (click)="openFindUsModal()">Find Us</button>
     </nav>
   }
 </header>
@@ -117,6 +117,62 @@
           <p>* Consuming raw or undercooked meats, poultry, seafood, shellfish, or eggs may increase your risk of foodborne illness.</p>
           <p class="mt-1">Drink Responsibly &bull; www.allstardesmoines.com</p>
         </footer>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Find Us Modal -->
+@if (findUsModalOpen()) {
+  <div
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 py-8"
+    (click)="closeFindUsModal()"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Find Us"
+  >
+    <div
+      class="relative w-full max-w-xl rounded-2xl border border-gray-800 bg-gray-950 p-8 text-white shadow-2xl"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        (click)="closeFindUsModal()"
+        class="absolute right-4 top-4 rounded-full bg-gray-800 px-3 py-1 text-lg text-white hover:bg-red-700 transition"
+        aria-label="Close Find Us"
+      >✕</button>
+
+      <p class="text-sm font-semibold uppercase tracking-[0.35em] text-yellow-400">Find Us</p>
+      <div class="mt-6 space-y-2">
+        <p class="text-2xl font-bold text-white">All-Star Sports Bar</p>
+        <a
+          href="https://www.google.com/maps/search/?api=1&query=22303+Marine+View+Dr.+S.%2C+Des+Moines%2C+WA+98198"
+          target="_blank"
+          rel="noreferrer"
+          class="block text-lg text-gray-300 transition hover:text-yellow-400"
+        >
+          22303 Marine View Dr. S.
+        </a>
+        <a
+          href="https://www.google.com/maps/search/?api=1&query=22303+Marine+View+Dr.+S.%2C+Des+Moines%2C+WA+98198"
+          target="_blank"
+          rel="noreferrer"
+          class="block text-lg text-gray-300 transition hover:text-yellow-400"
+        >
+          Des Moines, WA 98198
+        </a>
+      </div>
+
+      <div class="mt-8">
+        <a
+          href="https://www.google.com/maps/search/?api=1&query=22303+Marine+View+Dr.+S.%2C+Des+Moines%2C+WA+98198"
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex items-center gap-3 rounded-full border border-yellow-500 bg-yellow-500/10 px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-yellow-400 transition hover:bg-yellow-500 hover:text-gray-950"
+        >
+          <span aria-hidden="true">📍</span>
+          Open in Google Maps
+        </a>
       </div>
     </div>
   </div>
@@ -217,7 +273,7 @@
         </div>
       </div>
 
-      <div #findUsContainer class="rounded-2xl border border-gray-800 bg-gray-900/80 px-8 py-10 shadow-xl" [class.blink-animation]="isBlinking()">
+      <div class="rounded-2xl border border-gray-800 bg-gray-900/80 px-8 py-10 shadow-xl">
         <p class="text-sm font-semibold uppercase tracking-[0.35em] text-yellow-400">Find Us</p>
         <div class="mt-6 space-y-2">
           <p class="text-xl font-bold text-white">All-Star Sports Bar</p>

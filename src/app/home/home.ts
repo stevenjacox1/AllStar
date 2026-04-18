@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ViewChild, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DailySpecialsGalleryComponent } from '../components/daily-specials-gallery/daily-specials-gallery.component';
 import { UpcomingEventsComponent } from '../components/upcoming-events/upcoming-events';
@@ -42,7 +42,7 @@ const SLIDE_ROTATION_MS = 5000;
   selector: 'app-home',
   standalone: true,
   imports: [DailySpecialsGalleryComponent, UpcomingEventsComponent],
-  host: { '(document:keydown.escape)': 'closeMenu()' },
+  host: { '(document:keydown.escape)': 'closeOverlays()' },
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -52,15 +52,14 @@ export class HomeComponent {
   private readonly destroyRef = inject(DestroyRef);
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
 
-  @ViewChild('findUsContainer') findUsContainer?: ElementRef<HTMLDivElement>;
-
   protected readonly menuOpen = signal(false);
+  protected readonly findUsModalOpen = signal(false);
   protected readonly mobileNavOpen = signal(false);
   protected readonly menuData = signal<MenuData | null>(null);
-  protected readonly isBlinking = signal(false);
 
   protected openMenu(): void {
     this.menuOpen.set(true);
+    this.findUsModalOpen.set(false);
     this.mobileNavOpen.set(false);
     if (!this.menuData()) {
       this.loadMenuData();
@@ -69,6 +68,21 @@ export class HomeComponent {
 
   protected closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  protected openFindUsModal(): void {
+    this.findUsModalOpen.set(true);
+    this.menuOpen.set(false);
+    this.mobileNavOpen.set(false);
+  }
+
+  protected closeFindUsModal(): void {
+    this.findUsModalOpen.set(false);
+  }
+
+  protected closeOverlays(): void {
+    this.closeMenu();
+    this.closeFindUsModal();
   }
 
   protected toggleMobileNav(): void {
@@ -90,28 +104,6 @@ export class HomeComponent {
   constructor() {
     this.loadVibeSlides();
     this.destroyRef.onDestroy(() => this.stopRotation());
-    this.setupFindUsAnimation();
-  }
-
-  private setupFindUsAnimation(): void {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
-
-    // Listen for hash changes to the Find Us section
-    window.addEventListener('hashchange', () => {
-      if (window.location.hash === '#find-us') {
-        this.triggerBlink();
-      }
-    });
-
-    // Also trigger on initial load if hash is already #find-us
-    if (window.location.hash === '#find-us') {
-      setTimeout(() => this.triggerBlink(), 100);
-    }
-  }
-
-  private triggerBlink(): void {
-    this.isBlinking.set(true);
-    setTimeout(() => this.isBlinking.set(false), 3600); // 6 blinks * 0.6s = 3.6s
   }
 
   protected setActiveSlide(index: number): void {
