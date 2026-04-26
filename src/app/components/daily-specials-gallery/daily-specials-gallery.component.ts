@@ -117,6 +117,8 @@ export class DailySpecialsGalleryComponent {
   private readonly dayKeys = this.slides.map(slide => slide.dayKey);
   private readonly todayDayKey = signal(this.getTodayDayKey());
 
+  protected readonly loaded = signal(false);
+
   private readonly galleryContent = toSignal(
     this.http.get<GalleryContent[] | null>('/api/gallery').pipe(
       map(response =>
@@ -126,7 +128,8 @@ export class DailySpecialsGalleryComponent {
           caption: (item.caption ?? '').trim()
         }))
       ),
-      catchError(() => of([]))
+      catchError(() => of([])),
+      map(items => { this.loaded.set(true); return items; })
     ),
     { initialValue: [] }
   );
