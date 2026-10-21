@@ -35,7 +35,6 @@ export class SlideshowManagerComponent {
   protected readonly seedingDemoSlides = signal(false);
   protected readonly error = signal('');
   protected readonly success = signal('');
-  protected readonly draggingKey = signal<string | null>(null);
   protected readonly captionDraftByKey = signal<Record<string, string>>({});
 
   private readonly allItems = signal<GalleryItem[]>([]);
@@ -117,27 +116,12 @@ export class SlideshowManagerComponent {
     }
   }
 
-  protected onDragStart(key: string): void {
-    this.draggingKey.set(key);
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-  }
-
-  protected async onDrop(targetKey: string): Promise<void> {
-    const sourceKey = this.draggingKey();
-    this.draggingKey.set(null);
-
-    if (!sourceKey || sourceKey === targetKey) {
-      return;
-    }
-
+  protected async moveSlide(key: string, direction: -1 | 1): Promise<void> {
     const orderedSlides = [...this.slideshowItems()];
-    const fromIndex = orderedSlides.findIndex(item => item.key === sourceKey);
-    const toIndex = orderedSlides.findIndex(item => item.key === targetKey);
+    const fromIndex = orderedSlides.findIndex(item => item.key === key);
+    const toIndex = fromIndex + direction;
 
-    if (fromIndex === -1 || toIndex === -1) {
+    if (fromIndex === -1 || toIndex < 0 || toIndex >= orderedSlides.length) {
       return;
     }
 
@@ -146,10 +130,6 @@ export class SlideshowManagerComponent {
 
     this.applyLocalOrder(orderedSlides);
     await this.persistSlideOrder(orderedSlides);
-  }
-
-  protected onDragEnd(): void {
-    this.draggingKey.set(null);
   }
 
   protected async removeSlide(key: string): Promise<void> {
