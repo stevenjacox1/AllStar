@@ -190,11 +190,13 @@
            style="background-image: url('/AllStarLogo.png?v=20260416');">
     <div class="absolute inset-0 bg-black/65"></div>
 
-    <div class="relative z-10 text-center px-6 max-w-5xl">
-      <h2 class="text-3xl sm:text-5xl md:text-7xl font-black text-red-600 tracking-tight drop-shadow-2xl">
-        {{ heroText() }}
-      </h2>
-    </div>
+    @if (heroText()) {
+      <div class="relative z-10 text-center px-6 max-w-5xl">
+        <h2 class="text-3xl sm:text-5xl md:text-7xl font-black text-red-600 tracking-tight drop-shadow-2xl">
+          {{ heroText() }}
+        </h2>
+      </div>
+    }
   </section>
 
   <!-- Daily Specials -->

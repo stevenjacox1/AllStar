@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -13,15 +13,17 @@ import { SiteContentService } from '../../services/site-content.service';
 export class AdminSiteContentComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected readonly siteContent = inject(SiteContentService);
 
   protected heroText = '';
   protected readonly saving = signal(false);
   protected readonly saveStatus = signal<'idle' | 'success' | 'error'>('idle');
 
-  ngOnInit(): void {
-    this.siteContent.loadHeroText();
+  async ngOnInit(): Promise<void> {
+    await this.siteContent.loadHeroText();
     this.heroText = this.siteContent.heroText();
+    this.cdr.markForCheck();
   }
 
   protected async save(): Promise<void> {
