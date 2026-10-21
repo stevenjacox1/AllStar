@@ -1,4 +1,11 @@
 {
+  "routes": [
+    {
+      "route": "/api/*",
+      "methods": ["POST", "PUT", "PATCH", "DELETE"],
+      "allowedRoles": ["admin"]
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/gallery/*", "/menu.html", "/*.ico", "/*.jpg", "/*.png", "/*.svg", "/*.css", "/*.js"]
