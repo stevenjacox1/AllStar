@@ -6,33 +6,64 @@
       <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-600 border-t-yellow-400"></div>
     </div>
   } @else {
-  <div class="mt-8 grid grid-cols-1 gap-8">
-    @for (special of daySpecials(); track special.dayKey) {
-      <section class="overflow-hidden rounded-2xl border border-gray-700 bg-gray-950/80 shadow-2xl">
-        <div class="relative">
-          <img
-            [ngSrc]="special.src"
-            [alt]="special.alt"
-            width="1600"
-            height="900"
-            class="block w-full h-auto max-h-[52vh] md:max-h-[62vh] object-contain"
-            [priority]="$index === 0"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent"></div>
-          <div class="absolute bottom-0 left-0 right-0 p-5 md:p-7">
-            <p class="text-red-400 font-semibold uppercase tracking-widest text-xs md:text-sm">{{ special.day }}</p>
-            <h4 class="text-white text-2xl md:text-4xl font-black">{{ special.caption }}</h4>
-          </div>
+  <div class="mt-8" role="tablist" aria-label="Day of the week">
+    <div class="flex flex-wrap justify-center gap-2">
+      @for (special of daySpecials(); track special.dayKey; let i = $index) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="i === selectedIndex()"
+          (click)="select(i)"
+          class="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+          [class]="i === selectedIndex()
+            ? 'bg-red-700 text-white'
+            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'"
+        >
+          {{ special.day }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="mt-6 relative">
+    @let special = daySpecials()[selectedIndex()];
+    <section class="overflow-hidden rounded-2xl border border-gray-700 bg-gray-950/80 shadow-2xl">
+      <div class="relative">
+        <img
+          [ngSrc]="special.src"
+          [alt]="special.alt"
+          width="1600"
+          height="900"
+          class="block w-full h-auto max-h-[52vh] md:max-h-[62vh] object-contain"
+          priority
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-5 md:p-7 pointer-events-none">
+          <p class="text-red-400 font-semibold uppercase tracking-widest text-xs md:text-sm">{{ special.day }}</p>
+          <h4 class="text-white text-2xl md:text-4xl font-black">{{ special.caption }}</h4>
         </div>
 
-        <div class="p-6 md:p-8">
-          <div
-            class="text-gray-200 text-base md:text-lg leading-relaxed [&_p]:mb-3 [&_strong]:text-white [&_ul]:list-disc [&_ul]:pl-6"
-            [innerHTML]="special.detailsHtml"
-          ></div>
-        </div>
-      </section>
-    }
+        <button
+          type="button"
+          aria-label="Previous day"
+          (click)="select(selectedIndex() - 1)"
+          class="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/60 text-white text-2xl hover:bg-black/80"
+        >&#8249;</button>
+        <button
+          type="button"
+          aria-label="Next day"
+          (click)="select(selectedIndex() + 1)"
+          class="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/60 text-white text-2xl hover:bg-black/80"
+        >&#8250;</button>
+      </div>
+
+      <div class="p-6 md:p-8">
+        <div
+          class="text-gray-200 text-base md:text-lg leading-relaxed [&_p]:mb-3 [&_strong]:text-white [&_ul]:list-disc [&_ul]:pl-6"
+          [innerHTML]="special.detailsHtml"
+        ></div>
+      </div>
+    </section>
   </div>
 
   @if (extraSpecials().length > 0) {

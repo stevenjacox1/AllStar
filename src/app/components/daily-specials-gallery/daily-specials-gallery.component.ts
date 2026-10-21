@@ -145,20 +145,15 @@ export class DailySpecialsGalleryComponent {
     return lookup;
   });
 
-  private readonly orderedDayKeys = computed(() => {
-    const keys = [...this.dayKeys];
-    const today = this.todayDayKey();
-    const startIndex = keys.indexOf(today);
+  protected readonly selectedIndex = signal(this.dayKeys.indexOf(this.todayDayKey()));
 
-    if (startIndex <= 0) {
-      return keys;
-    }
-
-    return [...keys.slice(startIndex), ...keys.slice(0, startIndex)];
-  });
+  protected select(index: number): void {
+    const count = this.dayKeys.length;
+    this.selectedIndex.set(((index % count) + count) % count);
+  }
 
   protected readonly daySpecials = computed<DaySpecial[]>(() =>
-    this.orderedDayKeys().map(dayKey => {
+    this.dayKeys.map(dayKey => {
       const slide = this.slides.find(item => item.dayKey === dayKey)!;
       const savedContent = this.dayContentByKey().get(dayKey);
       const html = savedContent?.html?.trim() || '<p>Special details are unavailable right now.</p>';
