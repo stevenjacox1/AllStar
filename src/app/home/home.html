@@ -1,3 +1,52 @@
+<ng-template #menuSections>
+  @for (section of menuData()!.sections; track section.id) {
+    <section class="mt-8 first:mt-0">
+      <h2 class="mb-3 border-b-2 border-red-600 pb-2 text-xl font-black uppercase tracking-wide text-red-500">{{ section.title }}</h2>
+      @if (section.note) {
+        <p class="mb-3 text-sm italic text-yellow-400">{{ section.note }}</p>
+      }
+
+      @if (section.type === 'tags') {
+        <div class="flex flex-wrap gap-2">
+          @for (item of section.items; track item.id) {
+            <span class="rounded-full border border-gray-600 bg-gray-800 px-3 py-1 text-sm text-gray-200">{{ item.name }}</span>
+          }
+        </div>
+      } @else if (section.type === 'grid') {
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          @for (item of section.items; track item.id) {
+            <div class="rounded-lg border border-gray-700 bg-gray-900/60 p-3">
+              <p class="font-bold text-white">
+                <span class="mr-1 text-red-500">&#9733;</span>{{ item.name }}
+                @if (item.price) { <span class="text-yellow-400">${{ item.price }}</span> }
+              </p>
+              @if (item.description) {
+                <p class="mt-1 text-sm text-gray-400">{{ item.description }}</p>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="space-y-4">
+          @for (item of section.items; track item.id) {
+            <div>
+              <div class="flex items-baseline justify-between">
+                <span class="font-bold text-white"><span class="mr-1 text-red-500">&#9733;</span>{{ item.name }}</span>
+                @if (item.price) {
+                  <span class="ml-4 whitespace-nowrap font-bold text-yellow-400">${{ item.price }}</span>
+                }
+              </div>
+              @if (item.description) {
+                <p class="mt-1 text-sm text-gray-400">{{ item.description }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</ng-template>
+
 <header class="fixed top-0 left-0 z-50 w-full h-[10vh] bg-red-800 shadow-xl">
   <div class="container mx-auto h-full px-4 flex items-center justify-between">
     <!-- Logo / Name -->
@@ -65,52 +114,7 @@
         @if (!menuData()) {
           <p class="py-16 text-center text-gray-500">Loading menu…</p>
         } @else {
-          @for (section of menuData()!.sections; track section.id) {
-            <section class="mt-8">
-              <h2 class="mb-3 border-b-2 border-red-600 pb-2 text-xl font-black uppercase tracking-wide text-red-500">{{ section.title }}</h2>
-              @if (section.note) {
-                <p class="mb-3 text-sm italic text-yellow-400">{{ section.note }}</p>
-              }
-
-              @if (section.type === 'tags') {
-                <div class="flex flex-wrap gap-2">
-                  @for (item of section.items; track item.id) {
-                    <span class="rounded-full border border-gray-600 bg-gray-800 px-3 py-1 text-sm text-gray-200">{{ item.name }}</span>
-                  }
-                </div>
-              } @else if (section.type === 'grid') {
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  @for (item of section.items; track item.id) {
-                    <div class="rounded-lg border border-gray-700 bg-gray-900/60 p-3">
-                      <p class="font-bold text-white">
-                        <span class="mr-1 text-red-500">&#9733;</span>{{ item.name }}
-                        @if (item.price) { <span class="text-yellow-400">${{ item.price }}</span> }
-                      </p>
-                      @if (item.description) {
-                        <p class="mt-1 text-sm text-gray-400">{{ item.description }}</p>
-                      }
-                    </div>
-                  }
-                </div>
-              } @else {
-                <div class="space-y-4">
-                  @for (item of section.items; track item.id) {
-                    <div>
-                      <div class="flex items-baseline justify-between">
-                        <span class="font-bold text-white"><span class="mr-1 text-red-500">&#9733;</span>{{ item.name }}</span>
-                        @if (item.price) {
-                          <span class="ml-4 whitespace-nowrap font-bold text-yellow-400">${{ item.price }}</span>
-                        }
-                      </div>
-                      @if (item.description) {
-                        <p class="mt-1 text-sm text-gray-400">{{ item.description }}</p>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-            </section>
-          }
+          <ng-container [ngTemplateOutlet]="menuSections"></ng-container>
         }
 
         <footer class="mt-10 border-t border-gray-800 pt-4 text-center text-xs text-gray-500">
@@ -202,6 +206,23 @@
   <!-- Daily Specials -->
   <section class="py-16 md:py-24 px-6 bg-gray-900/80">
     <app-daily-specials-gallery></app-daily-specials-gallery>
+  </section>
+
+  <!-- Menu -->
+  <section id="menu" class="py-16 md:py-24 px-6 bg-gray-950">
+    <div class="mx-auto max-w-6xl text-center">
+      <h3 class="text-4xl md:text-5xl font-bold mb-3 text-yellow-400">Menu</h3>
+      <div class="mt-8 rounded-2xl border border-gray-700 bg-gray-950/80 p-8 shadow-2xl md:p-12">
+        <p class="text-lg text-gray-300 md:text-xl">Burgers, wings, appetizers and more.</p>
+        <button
+          type="button"
+          (click)="openMenu()"
+          class="mt-6 rounded-full border border-yellow-500 bg-yellow-500/10 px-6 py-3 text-sm font-bold uppercase tracking-[0.2em] text-yellow-400 transition hover:bg-yellow-500 hover:text-gray-950 cursor-pointer"
+        >
+          View Full Menu
+        </button>
+      </div>
+    </div>
   </section>
 
   <!-- Upcoming Events -->

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { NgTemplateOutlet } from '@angular/common';
 import { DailySpecialsGalleryComponent } from '../components/daily-specials-gallery/daily-specials-gallery.component';
 import { UpcomingEventsComponent } from '../components/upcoming-events/upcoming-events';
 import { SiteContentService } from '../services/site-content.service';
@@ -42,7 +43,7 @@ const SLIDE_ROTATION_MS = 5000;
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [DailySpecialsGalleryComponent, UpcomingEventsComponent],
+  imports: [NgTemplateOutlet, DailySpecialsGalleryComponent, UpcomingEventsComponent],
   host: { '(document:keydown.escape)': 'closeOverlays()' },
   templateUrl: './home.html',
   styleUrl: './home.css',
