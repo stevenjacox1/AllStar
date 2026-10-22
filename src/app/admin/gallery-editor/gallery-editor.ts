@@ -15,12 +15,6 @@ interface GalleryItem {
   imageUrl: string;
 }
 
-interface EditableCard {
-  key: string;
-  label: string;
-  isDaySection: boolean;
-}
-
 const DEFAULT_DAY_CAPTIONS: Record<string, string> = {
   monday: 'Miller Monday',
   tuesday: 'Taco Tuesday',
@@ -85,22 +79,6 @@ export class GalleryEditorComponent {
   protected readonly htmlPreview = computed<SafeHtml>(() =>
     this.sanitizer.bypassSecurityTrustHtml(normalizeHtml(this.html()))
   );
-
-  protected readonly editableCards = computed<EditableCard[]>(() => {
-    const extraCards = this.extraSections().map(section => ({
-      key: section.key,
-      label: section.caption,
-      isDaySection: false
-    }));
-
-    const dayCards = this.days.map(day => ({
-      key: day,
-      label: DEFAULT_DAY_CAPTIONS[day] || day,
-      isDaySection: true
-    }));
-
-    return [...dayCards, ...extraCards];
-  });
 
   constructor() {
     this.refreshAllContent();
@@ -355,14 +333,6 @@ export class GalleryEditorComponent {
 
   protected isImageBusyForKey(key: string): boolean {
     return this.uploadingImageKey() === key || this.savingImageKey() === key;
-  }
-
-  protected cardImageUrl(key: string): string {
-    if (this.selectedKey() === key) {
-      return this.imageUrl().trim();
-    }
-
-    return this.allItems().find(item => item.key === key)?.imageUrl?.trim() ?? '';
   }
 
   protected uploadedFileNameForKey(key: string): string {
