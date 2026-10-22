@@ -17,80 +17,45 @@
       }
     </div>
 
-    <div class="mt-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
-      <p class="text-gray-300 text-sm mb-3">Additional Sections (shown at the bottom of Daily Specials):</p>
+  </div>
 
-      <div class="flex flex-col gap-3 md:flex-row md:items-center">
-        <input
-          type="text"
-          [ngModel]="newSectionTitle()"
-          (ngModelChange)="newSectionTitle.set($event)"
-          class="w-full md:max-w-sm px-4 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-red-600"
-          placeholder="New section title..."
-        />
-        <button
-          (click)="createSection()"
-          [disabled]="isSaving()"
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded transition"
-        >
-          Create Section
-        </button>
-      </div>
+  <div class="mb-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
+    <p class="text-gray-300 text-sm mb-3">Card Background Image Uploads (all gallery cards):</p>
+    <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      @for (card of editableCards(); track card.key) {
+        <div class="rounded-lg border border-gray-700 bg-gray-950/70 p-3">
+          <p class="text-sm font-semibold text-white">{{ card.label }}</p>
+          <p class="text-xs text-gray-400">{{ card.key }}</p>
 
-      @if (extraSections().length > 0) {
-        <div class="mt-4 flex flex-wrap gap-2">
-          @for (section of extraSections(); track section.key) {
-            <button
-              (click)="selectKey(section.key)"
-              [class.bg-red-600]="selectedKey() === section.key"
-              [class.bg-gray-700]="selectedKey() !== section.key"
-              class="px-4 py-2 rounded text-white font-semibold transition hover:bg-red-700"
-            >
-              {{ section.caption }}
-            </button>
-          }
+          <div class="mt-3 flex flex-col gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              (change)="uploadImageForKey(card.key, $event)"
+              [disabled]="isImageBusyForKey(card.key) || isSaving()"
+              class="block w-full text-xs text-gray-300 file:mr-3 file:rounded file:border-0 file:bg-red-700 file:px-3 file:py-2 file:text-white hover:file:bg-red-600"
+            />
+
+            @if (cardImageUrl(card.key)) {
+              <img
+                [src]="cardImageUrl(card.key)"
+                [alt]="card.label + ' image preview'"
+                class="max-h-36 w-full rounded border border-gray-700 object-cover"
+              />
+            }
+
+            @if (uploadingImageKey() === card.key) {
+              <p class="text-xs text-yellow-300">Uploading image...</p>
+            }
+            @if (savingImageKey() === card.key) {
+              <p class="text-xs text-yellow-300">Saving image URL...</p>
+            }
+            @if (imageSaveSuccessKey() === card.key) {
+              <p class="text-xs text-green-300">Uploaded: {{ uploadedFileNameForKey(card.key) || 'Image saved for this card' }}</p>
+            }
+          </div>
         </div>
       }
-
-      <div class="mt-6 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
-        <p class="text-gray-300 text-sm mb-3">Card Background Image Uploads (all gallery cards):</p>
-        <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          @for (card of editableCards(); track card.key) {
-            <div class="rounded-lg border border-gray-700 bg-gray-950/70 p-3">
-              <p class="text-sm font-semibold text-white">{{ card.label }}</p>
-              <p class="text-xs text-gray-400">{{ card.key }}</p>
-
-              <div class="mt-3 flex flex-col gap-3">
-                <input
-                  type="file"
-                  accept="image/*"
-                  (change)="uploadImageForKey(card.key, $event)"
-                  [disabled]="isImageBusyForKey(card.key) || isSaving()"
-                  class="block w-full text-xs text-gray-300 file:mr-3 file:rounded file:border-0 file:bg-red-700 file:px-3 file:py-2 file:text-white hover:file:bg-red-600"
-                />
-
-                @if (cardImageUrl(card.key)) {
-                  <img
-                    [src]="cardImageUrl(card.key)"
-                    [alt]="card.label + ' image preview'"
-                    class="max-h-36 w-full rounded border border-gray-700 object-cover"
-                  />
-                }
-
-                @if (uploadingImageKey() === card.key) {
-                  <p class="text-xs text-yellow-300">Uploading image...</p>
-                }
-                @if (savingImageKey() === card.key) {
-                  <p class="text-xs text-yellow-300">Saving image URL...</p>
-                }
-                @if (imageSaveSuccessKey() === card.key) {
-                  <p class="text-xs text-green-300">Uploaded: {{ uploadedFileNameForKey(card.key) || 'Image saved for this card' }}</p>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      </div>
     </div>
   </div>
 
@@ -250,7 +215,44 @@
             <img [src]="imageUrl()" alt="Section image preview" class="max-h-56 w-full rounded border border-gray-700 object-cover" />
           </div>
         }
+
       </div>
     </div>
   }
+
+  <div class="mt-8 rounded-xl border border-gray-700 bg-gray-900/60 p-4">
+    <p class="text-gray-300 text-sm mb-3">Additional Sections (shown at the bottom of Daily Specials):</p>
+
+    <div class="flex flex-col gap-3 md:flex-row md:items-center">
+      <input
+        type="text"
+        [ngModel]="newSectionTitle()"
+        (ngModelChange)="newSectionTitle.set($event)"
+        class="w-full md:max-w-sm px-4 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:border-red-600"
+        placeholder="New section title..."
+      />
+      <button
+        (click)="createSection()"
+        [disabled]="isSaving()"
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold rounded transition"
+      >
+        Create Section
+      </button>
+    </div>
+
+    @if (extraSections().length > 0) {
+      <div class="mt-4 flex flex-wrap gap-2">
+        @for (section of extraSections(); track section.key) {
+          <button
+            (click)="selectKey(section.key)"
+            [class.bg-red-600]="selectedKey() === section.key"
+            [class.bg-gray-700]="selectedKey() !== section.key"
+            class="px-4 py-2 rounded text-white font-semibold transition hover:bg-red-700"
+          >
+            {{ section.caption }}
+          </button>
+        }
+      </div>
+    }
+  </div>
 </div>
