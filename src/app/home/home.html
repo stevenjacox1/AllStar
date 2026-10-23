@@ -1,5 +1,5 @@
 <ng-template #menuSections>
-  @for (section of menuData()!.sections; track section.id) {
+  @for (section of orderedMenuSections(); track section.id) {
     <section class="mt-8 first:mt-0">
       <h2 class="mb-3 border-b-2 border-red-600 pb-2 text-xl font-black uppercase tracking-wide text-red-500">{{ section.title }}</h2>
       @if (section.note) {

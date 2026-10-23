@@ -39,6 +39,25 @@ export interface MenuData {
 
 const SLIDESHOW_PREFIX = 'slideshow:';
 const SLIDE_ROTATION_MS = 5000;
+const HAPPY_HOUR_SECTION_ID = 'happy-hour';
+
+/**
+ * Happy hour runs Sunday–Thursday, 3PM–6PM.
+ * Evaluated in the bar's timezone (Des Moines, WA) so the
+ * ordering is correct for visitors in any timezone.
+ */
+function isHappyHour(now: Date): boolean {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    weekday: 'short',
+    hour: 'numeric',
+    hour12: false
+  }).formatToParts(now);
+  const weekday = parts.find(p => p.type === 'weekday')?.value;
+  const hour = Number(parts.find(p => p.type === 'hour')?.value ?? NaN);
+  const weekdayOk = weekday !== 'Fri' && weekday !== 'Sat';
+  return weekdayOk && hour >= 15 && hour < 18;
+}
 
 @Component({
   selector: 'app-home',
@@ -63,6 +82,22 @@ export class HomeComponent {
   protected readonly findUsModalOpen = signal(false);
   protected readonly mobileNavOpen = signal(false);
   protected readonly menuData = signal<MenuData | null>(null);
+
+  /**
+   * Menu sections in display order: the happy-hour section is hoisted
+   * to the top while happy hour is active (Sun–Thu, 3–6 PM Pacific).
+   */
+  protected readonly orderedMenuSections = computed(() => {
+    const sections = this.menuData()?.sections ?? [];
+    if (!isHappyHour(new Date())) {
+      return sections;
+    }
+    const idx = sections.findIndex(s => s.id === HAPPY_HOUR_SECTION_ID);
+    if (idx <= 0) {
+      return sections;
+    }
+    return [sections[idx], ...sections.slice(0, idx), ...sections.slice(idx + 1)];
+  });
 
   protected openMenu(): void {
     this.menuOpen.set(true);
