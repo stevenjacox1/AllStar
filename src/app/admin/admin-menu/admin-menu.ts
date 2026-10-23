@@ -7,6 +7,13 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragHandle,
+  CdkDropList,
+  moveItemInArray
+} from '@angular/cdk/drag-drop';
 
 export interface MenuItem {
   id: string;
@@ -34,7 +41,7 @@ function genId(): string {
 
 @Component({
   selector: 'app-admin-menu',
-  imports: [FormsModule],
+  imports: [FormsModule, CdkDropList, CdkDrag, CdkDragHandle],
   templateUrl: './admin-menu.html',
   styleUrl: './admin-menu.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -107,13 +114,8 @@ export class AdminMenuComponent {
     this.touch();
   }
 
-  protected moveItem(section: MenuSection, item: MenuItem, dir: -1 | 1): void {
-    const idx = section.items.indexOf(item);
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= section.items.length) return;
-    const arr = [...section.items];
-    [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
-    section.items = arr;
+  protected dropItem(section: MenuSection, event: CdkDragDrop<MenuItem[]>): void {
+    moveItemInArray(section.items, event.previousIndex, event.currentIndex);
     this.touch();
   }
 
@@ -142,15 +144,10 @@ export class AdminMenuComponent {
     this.touch();
   }
 
-  protected moveSection(section: MenuSection, dir: -1 | 1): void {
+  protected dropSection(event: CdkDragDrop<MenuSection[]>): void {
     const data = this.menu();
     if (!data) return;
-    const idx = data.sections.indexOf(section);
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= data.sections.length) return;
-    const arr = [...data.sections];
-    [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
-    data.sections = arr;
+    moveItemInArray(data.sections, event.previousIndex, event.currentIndex);
     this.touch();
   }
 

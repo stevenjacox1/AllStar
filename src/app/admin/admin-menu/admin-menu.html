@@ -25,9 +25,10 @@
     <p class="text-gray-400">Loading menu data…</p>
   } @else {
 
-    <!-- Sections list -->
-    @for (section of sections(); track section.id; let i = $index) {
-      <div class="rounded-xl border border-gray-700 bg-gray-900">
+    <!-- Sections list (drag handle to reorder) -->
+    <div class="space-y-4" cdkDropList (cdkDropListDropped)="dropSection($event)">
+    @for (section of sections(); track section.id) {
+      <div cdkDrag class="rounded-xl border border-gray-700 bg-gray-900">
 
         <!-- Section header row -->
         <div class="flex items-center gap-2 px-4 py-3">
@@ -42,11 +43,9 @@
             <span class="ml-2 text-xs font-normal text-gray-500">({{ section.items.length }} items · {{ section.type }})</span>
           </button>
 
-          <!-- Move up/down -->
-          <button type="button" (click)="moveSection(section, -1)" [disabled]="i === 0"
-            class="rounded px-2 py-1 text-gray-400 hover:text-white disabled:opacity-30 text-xs">▲</button>
-          <button type="button" (click)="moveSection(section, 1)" [disabled]="i === sections().length - 1"
-            class="rounded px-2 py-1 text-gray-400 hover:text-white disabled:opacity-30 text-xs">▼</button>
+          <!-- Drag handle -->
+          <button type="button" cdkDragHandle aria-label="Drag to reorder section"
+            class="drag-handle cursor-grab rounded px-2 py-1 text-gray-400 hover:text-white text-sm">⠿</button>
 
           <!-- Delete section -->
           <button type="button" (click)="removeSection(section)"
@@ -95,15 +94,12 @@
             <!-- Items -->
             <div class="space-y-2">
               <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Items</p>
-              @for (item of section.items; track item.id; let j = $index) {
-                <div class="flex gap-2 items-start rounded-lg border border-gray-700 bg-gray-800/60 p-3">
-                  <!-- Move item -->
-                  <div class="flex flex-col gap-1 pt-1">
-                    <button type="button" (click)="moveItem(section, item, -1)" [disabled]="j === 0"
-                      class="text-gray-500 hover:text-white disabled:opacity-30 text-xs leading-none">▲</button>
-                    <button type="button" (click)="moveItem(section, item, 1)" [disabled]="j === section.items.length - 1"
-                      class="text-gray-500 hover:text-white disabled:opacity-30 text-xs leading-none">▼</button>
-                  </div>
+              <div class="space-y-2" cdkDropList (cdkDropListDropped)="dropItem(section, $event)">
+              @for (item of section.items; track item.id) {
+                <div cdkDrag class="flex gap-2 items-start rounded-lg border border-gray-700 bg-gray-800/60 p-3">
+                  <!-- Drag handle -->
+                  <button type="button" cdkDragHandle aria-label="Drag to reorder item"
+                    class="drag-handle cursor-grab pt-1 text-gray-500 hover:text-white text-sm leading-none">⠿</button>
 
                   <!-- Fields -->
                   <div class="flex-1 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -143,6 +139,7 @@
                     class="pt-1 text-red-500 hover:text-red-400 text-sm font-bold">✕</button>
                 </div>
               }
+              </div>
               <button
                 type="button"
                 (click)="addItem(section)"
@@ -155,6 +152,7 @@
         }
       </div>
     }
+    </div>
 
     <!-- Add section -->
     <button
