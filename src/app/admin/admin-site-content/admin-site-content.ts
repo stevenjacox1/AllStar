@@ -20,10 +20,36 @@ export class AdminSiteContentComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly saveStatus = signal<'idle' | 'success' | 'error'>('idle');
 
+  protected orderingEnabled = false;
+  protected orderingUrl = '';
+  protected readonly orderingSaving = signal(false);
+  protected readonly orderingStatus = signal<'idle' | 'success' | 'error' | 'invalid'>('idle');
+
   async ngOnInit(): Promise<void> {
-    await this.siteContent.loadHeroText();
+    await Promise.all([this.siteContent.loadHeroText(), this.siteContent.loadOnlineOrdering()]);
     this.heroText = this.siteContent.heroText();
+    this.orderingEnabled = this.siteContent.onlineOrderingEnabled();
+    this.orderingUrl = this.siteContent.onlineOrderingUrl();
     this.cdr.markForCheck();
+  }
+
+  protected async saveOrdering(): Promise<void> {
+    const url = this.orderingUrl.trim();
+    if ((url || this.orderingEnabled) && !/^https?:\/\/\S+$/i.test(url)) {
+      this.orderingStatus.set('invalid');
+      return;
+    }
+    this.orderingSaving.set(true);
+    this.orderingStatus.set('idle');
+    try {
+      await this.siteContent.saveOnlineOrdering(this.orderingEnabled, url);
+      this.orderingStatus.set('success');
+      setTimeout(() => this.orderingStatus.set('idle'), 3000);
+    } catch {
+      this.orderingStatus.set('error');
+    } finally {
+      this.orderingSaving.set(false);
+    }
   }
 
   protected async save(): Promise<void> {

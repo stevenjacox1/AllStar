@@ -56,6 +56,8 @@ export class HomeComponent {
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly heroText = this.siteContent.heroText;
+  protected readonly orderingEnabled = this.siteContent.onlineOrderingEnabled;
+  protected readonly orderingUrl = this.siteContent.onlineOrderingUrl;
 
   protected readonly menuOpen = signal(false);
   protected readonly findUsModalOpen = signal(false);
@@ -108,6 +110,7 @@ export class HomeComponent {
 
   constructor() {
     this.siteContent.loadHeroText();
+    this.siteContent.loadOnlineOrdering();
     this.loadVibeSlides();
     this.destroyRef.onDestroy(() => this.stopRotation());
   }

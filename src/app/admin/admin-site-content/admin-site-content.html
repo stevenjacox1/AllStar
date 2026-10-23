@@ -74,5 +74,48 @@
         }
       </div>
     </div>
+
+    <div class="mt-8 rounded-xl border border-gray-700 bg-gray-900/80 p-8">
+      <label class="block text-sm font-semibold uppercase tracking-[0.25em] text-yellow-400 mb-3">
+        Online Ordering Pickup Only
+      </label>
+      <p class="text-sm text-gray-400 mb-4">
+        When enabled, a section with a link to your Heartland POS online ordering page appears on the home page.
+      </p>
+
+      <label class="flex items-center gap-3 mb-4 cursor-pointer">
+        <input type="checkbox" [(ngModel)]="orderingEnabled" name="orderingEnabled" class="h-5 w-5 accent-red-600" />
+        <span class="font-medium">Show on home page</span>
+      </label>
+
+      <input
+        type="url"
+        [(ngModel)]="orderingUrl"
+        name="orderingUrl"
+        class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-red-500"
+        placeholder="https://..."
+      />
+
+      <div class="mt-6 flex items-center gap-4">
+        <button
+          type="button"
+          (click)="saveOrdering()"
+          [disabled]="orderingSaving()"
+          class="bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-lg transition-colors"
+        >
+          {{ orderingSaving() ? 'Saving…' : 'Save' }}
+        </button>
+
+        @if (orderingStatus() === 'success') {
+          <span class="text-green-400 text-sm font-medium">✓ Saved successfully</span>
+        }
+        @if (orderingStatus() === 'invalid') {
+          <span class="text-red-400 text-sm font-medium">Enter a valid link starting with http:// or https://</span>
+        }
+        @if (orderingStatus() === 'error') {
+          <span class="text-red-400 text-sm font-medium">Failed to save. Please try again.</span>
+        }
+      </div>
+    </div>
   </main>
 </div>
