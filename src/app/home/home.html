@@ -190,13 +190,16 @@
 
 <main class="pt-[10vh] min-h-screen w-full overflow-x-hidden bg-gray-950 text-white">
   <!-- Hero / Welcome section -->
-  <section class="relative h-[45vh] flex items-center justify-center bg-contain bg-center bg-no-repeat"
-           style="background-image: url('/AllStarLogo.png?v=20260416');">
-    <div class="absolute inset-0 bg-black/65"></div>
+  <section class="flex min-h-[50vh] flex-col items-center justify-center gap-2 bg-black px-4 py-4">
+    <img
+      src="/AllStarLogo.png?v=20260416"
+      alt="All-Star Sports Bar"
+      class="h-[42vh] max-h-[480px] w-full max-w-5xl object-contain"
+    >
 
     @if (heroText()) {
-      <div class="relative z-10 text-center px-6 max-w-5xl">
-        <h2 class="text-3xl sm:text-5xl md:text-7xl font-black text-red-600 tracking-tight drop-shadow-2xl">
+      <div class="max-w-5xl text-center">
+        <h2 class="text-2xl font-black tracking-tight text-red-600 drop-shadow-2xl sm:text-4xl md:text-5xl">
           {{ heroText() }}
         </h2>
       </div>
