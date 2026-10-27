@@ -78,10 +78,16 @@
     }
     return sections;
   }
+  function isVisible(section) {
+    var end = section.hideAfter || (section.id === 'breakfast' ? '2027-02-14' : null);
+    if (!end) return true;
+    var today = new Intl.DateTimeFormat('en-CA', {timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date());
+    return today <= end;
+  }
   function render(menu) {
     var loading = document.getElementById('menu-loading');
     if (loading) loading.remove();
-    document.getElementById('menu-sections').innerHTML = orderSections(menu.sections||[]).map(renderSection).join('');
+    document.getElementById('menu-sections').innerHTML = orderSections((menu.sections||[]).filter(isVisible)).map(renderSection).join('');
   }
 
   fetch('/api/menu').then(function(r){return r.json();}).then(render).catch(function(){

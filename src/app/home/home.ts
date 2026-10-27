@@ -30,11 +30,31 @@ export interface MenuSection {
   title: string;
   type: 'items' | 'grid' | 'tags';
   note: string | null;
+  /** Last date (YYYY-MM-DD, Pacific) the section is shown. */
+  hideAfter?: string | null;
   items: MenuItem[];
 }
 
 export interface MenuData {
   sections: MenuSection[];
+}
+
+const BREAKFAST_SECTION_ID = 'breakfast';
+// Default end of football season: Super Bowl LXI
+const DEFAULT_BREAKFAST_END = '2027-02-14';
+
+function pacificToday(now: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(now);
+}
+
+function isSectionExpired(section: MenuSection, now: Date): boolean {
+  const end = section.hideAfter ?? (section.id === BREAKFAST_SECTION_ID ? DEFAULT_BREAKFAST_END : null);
+  return !!end && pacificToday(now) > end;
 }
 
 const SLIDESHOW_PREFIX = 'slideshow:';
@@ -88,8 +108,9 @@ export class HomeComponent {
    * to the top while happy hour is active (Sun–Thu, 3–6 PM Pacific).
    */
   protected readonly orderedMenuSections = computed(() => {
-    const sections = this.menuData()?.sections ?? [];
-    if (!isHappyHour(new Date())) {
+    const now = new Date();
+    const sections = (this.menuData()?.sections ?? []).filter(s => !isSectionExpired(s, now));
+    if (!isHappyHour(now)) {
       return sections;
     }
     const idx = sections.findIndex(s => s.id === HAPPY_HOUR_SECTION_ID);

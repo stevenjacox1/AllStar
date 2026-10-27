@@ -27,6 +27,7 @@ export interface MenuSection {
   title: string;
   type: 'items' | 'grid' | 'tags';
   note: string | null;
+  hideAfter?: string | null;
   items: MenuItem[];
 }
 
@@ -91,6 +92,11 @@ export class AdminMenuComponent {
 
   protected updateSectionNote(section: MenuSection, note: string): void {
     section.note = note || null;
+    this.touch();
+  }
+
+  protected updateSectionHideAfter(section: MenuSection, date: string): void {
+    section.hideAfter = date || null;
     this.touch();
   }
 

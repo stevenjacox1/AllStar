@@ -89,6 +89,17 @@
                   class="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-yellow-500 focus:outline-none"
                 />
               </div>
+              @if (section.id === 'breakfast') {
+                <div class="sm:col-span-3">
+                  <label class="mb-1 block text-xs text-gray-400">Show breakfast through (hidden after this date; default is the last playoff game)</label>
+                  <input
+                    type="date"
+                    [ngModel]="section.hideAfter ?? '2027-02-14'"
+                    (ngModelChange)="updateSectionHideAfter(section, $event)"
+                    class="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-yellow-500 focus:outline-none"
+                  />
+                </div>
+              }
             </div>
 
             <!-- Items -->

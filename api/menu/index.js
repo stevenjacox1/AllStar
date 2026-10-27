@@ -141,6 +141,7 @@ const DEFAULT_MENU = {
       title: 'Breakfast Menu',
       type: 'items',
       note: 'Sundays Only · 9AM–1PM',
+      hideAfter: '2027-02-14',
       items: [
         { id: 'br1', name: 'Chilaquiles', price: '15', description: 'Fried tortillas simmered in red salsa. Topped with onion, cilantro, cheese and 3 fried eggs' },
         { id: 'br2', name: 'Omelette', price: '17', description: 'Sausage, bacon, onions, bell peppers, cheese, and hash browns' },
