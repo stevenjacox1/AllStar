@@ -79,6 +79,19 @@ function isHappyHour(now: Date): boolean {
   return weekdayOk && hour >= 15 && hour < 18;
 }
 
+/** Breakfast is served Sundays 9AM–1PM Pacific. */
+function isSundayBreakfast(now: Date): boolean {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    weekday: 'short',
+    hour: 'numeric',
+    hour12: false
+  }).formatToParts(now);
+  const weekday = parts.find(p => p.type === 'weekday')?.value;
+  const hour = Number(parts.find(p => p.type === 'hour')?.value ?? NaN);
+  return weekday === 'Sun' && hour >= 9 && hour < 13;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -110,10 +123,15 @@ export class HomeComponent {
   protected readonly orderedMenuSections = computed(() => {
     const now = new Date();
     const sections = (this.menuData()?.sections ?? []).filter(s => !isSectionExpired(s, now));
-    if (!isHappyHour(now)) {
+    const hoistId = isHappyHour(now)
+      ? HAPPY_HOUR_SECTION_ID
+      : isSundayBreakfast(now)
+        ? BREAKFAST_SECTION_ID
+        : null;
+    if (!hoistId) {
       return sections;
     }
-    const idx = sections.findIndex(s => s.id === HAPPY_HOUR_SECTION_ID);
+    const idx = sections.findIndex(s => s.id === hoistId);
     if (idx <= 0) {
       return sections;
     }

@@ -68,10 +68,25 @@
       return false;
     }
   }
+  function isSundayBreakfast() {
+    try {
+      var parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/Los_Angeles', weekday: 'short', hour: 'numeric', hour12: false}).formatToParts(new Date());
+      var weekday = '';
+      var hour = NaN;
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === 'weekday') weekday = parts[i].value;
+        if (parts[i].type === 'hour') hour = Number(parts[i].value);
+      }
+      return weekday === 'Sun' && hour >= 9 && hour < 13;
+    } catch (e) {
+      return false;
+    }
+  }
   function orderSections(sections) {
-    if (!isHappyHour()) return sections;
+    var hoistId = isHappyHour() ? 'happy-hour' : isSundayBreakfast() ? 'breakfast' : null;
+    if (!hoistId) return sections;
     for (var i = 0; i < sections.length; i++) {
-      if (sections[i].id === 'happy-hour') {
+      if (sections[i].id === hoistId) {
         if (i === 0) return sections;
         return [sections[i]].concat(sections.slice(0, i), sections.slice(i + 1));
       }
