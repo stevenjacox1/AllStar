@@ -24,15 +24,15 @@
             <div class="relative z-10 p-6 md:p-8">
               <div class="flex flex-col gap-4 md:flex-row md:items-end">
                 <div class="w-fit flex-shrink-0 text-center bg-black/45 border border-red-700 rounded-lg px-5 py-3 min-w-[100px] backdrop-blur-sm">
-                  <p class="text-red-400 text-xs uppercase tracking-widest font-semibold">{{ event.date | date:'MMM':'UTC' }}</p>
-                  <p class="text-white text-4xl font-black leading-none">{{ event.date | date:'d':'UTC' }}</p>
+                  <p class="text-red-400 text-xs uppercase tracking-widest font-semibold font-display">{{ event.date | date:'MMM':'UTC' }}</p>
+                  <p class="text-white text-4xl font-black font-display leading-none">{{ event.date | date:'d':'UTC' }}</p>
                   <p class="text-gray-300 text-sm">{{ event.date | date:'EEE':'UTC' }}</p>
                 </div>
 
                 <div class="flex-1">
                   <h4 class="text-2xl md:text-3xl font-black text-white drop-shadow">{{ event.title }}</h4>
                   @if (event.time) {
-                    <p class="text-yellow-300 text-sm font-semibold mt-1">{{ event.time }}</p>
+                    <p class="text-yellow-300 text-sm font-semibold font-display mt-1">{{ event.time }}</p>
                   }
                   @if (event.description) {
                     <p class="text-gray-100 mt-3 text-base leading-relaxed max-w-3xl">{{ event.description }}</p>

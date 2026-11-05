@@ -14,7 +14,7 @@
           role="tab"
           [attr.aria-selected]="i === selectedIndex()"
           (click)="select(i)"
-          class="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+          class="rounded-full px-4 py-2 text-sm font-semibold font-display transition-colors"
           [class]="i === selectedIndex()
             ? 'bg-red-700 text-white'
             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'"
@@ -39,7 +39,7 @@
         />
         <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent pointer-events-none"></div>
         <div class="absolute bottom-0 left-0 right-0 p-5 md:p-7 pointer-events-none">
-          <p class="text-red-400 font-semibold uppercase tracking-widest text-xs md:text-sm">{{ special.day }}</p>
+          <p class="text-red-400 font-semibold font-display uppercase tracking-widest text-xs md:text-sm">{{ special.day }}</p>
           <h4 class="text-white text-2xl md:text-4xl font-black">{{ special.caption }}</h4>
         </div>
 
@@ -68,7 +68,7 @@
 
   @if (extraSpecials().length > 0) {
     <section class="mt-10 rounded-2xl border border-gray-700 bg-black/50 p-6 md:p-8">
-      <p class="text-xs uppercase tracking-[0.25em] text-red-400 font-semibold">Additional Specials</p>
+      <p class="text-xs uppercase tracking-[0.25em] text-red-400 font-semibold font-display">Additional Specials</p>
       <div class="mt-4 grid grid-cols-1 gap-5">
         @for (special of extraSpecials(); track special.key) {
           <article class="rounded-xl border border-gray-700 bg-gray-950/80 p-5 md:p-6">
